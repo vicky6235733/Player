@@ -30,13 +30,20 @@ public class playerTest : MonoBehaviour
     bool isSprinting;//是否正在衝刺
     bool isOnFloor;
     static bool ColliderEntered;
+    //
+    Animator anim;
+    public static bool SpintAnimationRestart;//衝刺動畫是否能重新觸發(在update)
+   
 
     void Start()
     {
+
+        anim=GetComponent<Animator>();
+        AnimaController(1f);
         //初始化
         rb = GetComponent<Rigidbody>();
         GroundLayer = LayerMask.GetMask("Ground");;
-        GroundRayLength = 1f;
+        GroundRayLength = 2f;
         CollisionLayer = LayerMask.GetMask("Collision");;
         CollisionRayLength = 2.5f;
         decelerationFactor = 0.75f;
@@ -58,15 +65,24 @@ public class playerTest : MonoBehaviour
         isOnFloor = true;
         isSlowDown =false;
         ColliderEntered = false;
-        isSprinting = false;
+        isSprinting = false;//觸發update衝刺
+        //
+        SpintAnimationRestart=true;
+ 
+ 
+       
         
     }
     //目前剩餘射線優化(在一個物件設置多個碰撞，並分別引用Layer，來同時偵測地板和牆壁)
     void Update()
     {
+        AnimatorStateInfo stateInfo = anim.GetCurrentAnimatorStateInfo(0);//用來讀動畫狀態的物件(第0個Layer)
+        
         float hor = Input.GetAxis("Horizontal");
         float ver = Input.GetAxis("Vertical");
         MoveDirection = new Vector3(hor, 0, ver);
+
+        
 
         //rotate
         Vector3 RotateAmount = hor * Vector3.up * RotateSpeed * Time.deltaTime;
@@ -79,24 +95,31 @@ public class playerTest : MonoBehaviour
         if(isOnFloor && Input.GetKeyDown(KeyCode.Space))
         {
             rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+            AnimaController(2f);
         }
        
        //sprint
             if (Input.GetKeyDown(KeyCode.R))
             {  
                 isSprinting = true;//如果按R就判斷衝刺
+                if(SpintAnimationRestart){
+                    anim.SetBool("SprintStart",true);
+                    SpintAnimationRestart=false;
+                }
             }
+           
         //walk  
             if (MoveDirection != Vector3.zero && !isSprinting)
             { 
                 Vector3 MoveLength = new Vector3(0, 0, ver);
                 rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
+                AnimaController(3f);
+            }else if(!isSprinting){
+                AnimaController(1f);
             }
-        
 
         //slowDown(減速)
         isSlowDown = Physics.Raycast(transform.position, transform.forward, CollisionRayLength, CollisionLayer);//射線偵測前方有沒有物體
-        
 
         //knockback(如果正在彈回，就倒數時間然後停止)
         if (isKnockBack)
@@ -110,14 +133,16 @@ public class playerTest : MonoBehaviour
             }
         }
     }
-
+ 
     void FixedUpdate()//衝刺用update因為更新太快、衝太快，會有發生更新FPS衝突
     {
         
         float ver = Input.GetAxis("Vertical");
         if(isSprinting)
         {
+          
             if(MoveDirection != Vector3.zero){ //sprint_run(衝刺跑，有加入物理量)
+
                 if(!isSlowDown){//前方有物體就不給他硬衝
                     MoveAmount = transform.forward * ver * Speed * Time.fixedDeltaTime *1.5f;
                     }
@@ -126,22 +151,18 @@ public class playerTest : MonoBehaviour
                     MoveAmount = MoveDirection * Speed * Time.fixedDeltaTime;
                     
                 }
-                Invoke("StopMove", 0.5f);
+                
         }
-        //sprint
+        
+        //walk and sprint
         if (!ColliderEntered)
         {
-            rb.MovePosition(rb.position + MoveAmount);
+            StartCoroutine(SprintProcess(MoveAmount));
         }
+        
 
         //slowDown
         SlowDown();
-    }
-
-    void StopMove()//強制停下衝刺的物理慣性
-    {
-        MoveAmount = Vector3.zero;
-       isSprinting = false;
     }
     void SlowDown(){//如果前方有物體在靠近，就讓玩家減速(避免玩家硬要撞穿模)
         rb.velocity = new Vector3(
@@ -150,6 +171,33 @@ public class playerTest : MonoBehaviour
                 Mathf.Lerp(rb.velocity.z, 0, decelerationFactor * Time.fixedDeltaTime)
             );
     }
+    void StopMove()//強制停下衝刺的物理慣性
+    {
+
+        MoveAmount = Vector3.zero;
+        isSprinting = false;
+       
+    }
+    IEnumerator SprintProcess(Vector3 Amount){
+        yield return new WaitForSeconds(0.3f);
+        while(Amount.magnitude > 0.1f){
+            if(!anim.GetBool("SprintStart")){
+                rb.MovePosition(rb.position + Amount);
+                Invoke("StopMove", 0.8f);
+                yield break;
+            }else{
+                yield return null;
+            }
+        }
+        
+
+    }
+    
+    //
+    void AnimaController(float item){
+        anim.SetFloat("Action", item);
+    }
+    //
     void OnCollisionEnter(Collision other)
     {
         if (other.gameObject.tag != "floor")//如果撞到物體就停下，然後彈回
