@@ -42,9 +42,9 @@ public class playerTest : MonoBehaviour
         AnimaController(1f);
         //初始化
         rb = GetComponent<Rigidbody>();
-        GroundLayer = LayerMask.GetMask("Ground");;
-        GroundRayLength = 2f;
-        CollisionLayer = LayerMask.GetMask("Collision");;
+        GroundLayer = LayerMask.GetMask("Ground");
+        GroundRayLength = 1f;
+        CollisionLayer = LayerMask.GetMask("Collision");
         CollisionRayLength = 2.5f;
         decelerationFactor = 0.75f;
         //
@@ -74,6 +74,8 @@ public class playerTest : MonoBehaviour
         
     }
     //目前剩餘射線優化(在一個物件設置多個碰撞，並分別引用Layer，來同時偵測地板和牆壁)
+    //衝刺動畫優化
+    //跳躍動畫和idle衝突
     void Update()
     {
         AnimatorStateInfo stateInfo = anim.GetCurrentAnimatorStateInfo(0);//用來讀動畫狀態的物件(第0個Layer)
@@ -81,8 +83,9 @@ public class playerTest : MonoBehaviour
         float hor = Input.GetAxis("Horizontal");
         float ver = Input.GetAxis("Vertical");
         MoveDirection = new Vector3(hor, 0, ver);
-
-        
+        if(MoveDirection == Vector3.zero){
+            AnimaController(1f);
+        }
 
         //rotate
         Vector3 RotateAmount = hor * Vector3.up * RotateSpeed * Time.deltaTime;
@@ -91,11 +94,15 @@ public class playerTest : MonoBehaviour
         
 
         //jump
-        isOnFloor = Physics.Raycast(transform.position, -transform.up, GroundRayLength, GroundLayer);//射線偵測下方有沒有地板
+        Vector3 position = transform.position + Vector3.up * 0.5f;
+        Debug.DrawRay(position, Vector3.down * GroundRayLength, Color.red);
+        isOnFloor = Physics.Raycast(position, Vector3.down, GroundRayLength, GroundLayer);//射線偵測下方有沒有地板
+       
         if(isOnFloor && Input.GetKeyDown(KeyCode.Space))
         {
-            rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
             AnimaController(2f);
+            rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+            
         }
        
        //sprint
@@ -114,9 +121,9 @@ public class playerTest : MonoBehaviour
                 Vector3 MoveLength = new Vector3(0, 0, ver);
                 rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
                 AnimaController(3f);
-            }else if(!isSprinting){
-                AnimaController(1f);
             }
+                
+            
 
         //slowDown(減速)
         isSlowDown = Physics.Raycast(transform.position, transform.forward, CollisionRayLength, CollisionLayer);//射線偵測前方有沒有物體
