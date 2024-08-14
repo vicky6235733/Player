@@ -39,6 +39,8 @@ public class Player : MonoBehaviour
     //
     Animator anim;
     public static bool SpintAnimationRestart; //衝刺動畫是否能重新觸發(在update)
+    //
+    
 
     void Start()
     {

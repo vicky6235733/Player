@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Frog : MonoBehaviour
 {
+    public PaperItem TargetItem;
     public Transform StartObject;
     public Transform EndOnject;
     Animator anim;
@@ -15,8 +16,10 @@ public class Frog : MonoBehaviour
     Vector3 TargetPosition;//當前目標
     bool isMovingFrog;
     bool isMovedToEnd;
+    bool isPaperSearched;
     //
     CameraShake CameraShake;//鏡頭抖動腳本
+    
 
     
 
@@ -29,13 +32,15 @@ public class Frog : MonoBehaviour
         //初始化目標點
         TargetPosition = EndPoint;
         //
-        MoveSpeed = 10f;
+        MoveSpeed = 4f;
         JumpHeight = 1.5f;
         isMovingFrog=false;
         isMovedToEnd=false;
+        isPaperSearched=false;
         //
         anim = GetComponent<Animator>();
         CameraShake = Camera.main.GetComponent<CameraShake>();
+        
     }
 
     // 青蛙朝向要調整預設值
@@ -47,13 +52,15 @@ public class Frog : MonoBehaviour
         }else{
             anim.SetBool("FrogJump",false);
         }
+        if(isPaperSearched){
+            //Invoke("PaperSearched",2f);
+            isPaperSearched=false;
+        }
     }
    
     
     void MoveFrog(){
         
-
-
         isMovingFrog =true;
         StartCoroutine(JumpToTarget());
 
@@ -91,9 +98,13 @@ public class Frog : MonoBehaviour
         isMovingFrog = false;
         transform.Rotate(Vector3.up, 180f);
         
-
-
-    
-        
     }
+    void OnCollisionEnter(Collision other) {
+        
+        if(other.gameObject.tag == "Paper"){
+            isPaperSearched=true;
+            print("hit");
+        }
+    }
+  
 }

@@ -375,7 +375,10 @@
 "Assets/MainAssets/Scripts/AniBehaviour/PlayerAnimation.cs"
 "Assets/MainAssets/Scripts/CameraShake.cs"
 "Assets/MainAssets/Scripts/Frog.cs"
+"Assets/MainAssets/Scripts/PaperDisappear.cs"
+"Assets/MainAssets/Scripts/PaperManager.cs"
 "Assets/MainAssets/Scripts/Player.cs"
+"Assets/MainAssets/Scripts/ScriptableObject/PaperItem.cs"
 "Assets/Scripts/SimpleCameraController.cs"
 "Assets/TutorialInfo/Scripts/Readme.cs"
 -langversion:9.0
