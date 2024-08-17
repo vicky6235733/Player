@@ -24,7 +24,7 @@ public class PositionSaver : EditorWindow
     private List<GameObject> objectsToSave = new List<GameObject>();
     private List<string> draggedObjectNames = new List<string>(); // 用於顯示拖曳物件名稱
 
-    [MenuItem("Tools/Save Position Data")]
+    [MenuItem("Tools/JSON批量儲存物件位置與角度")]
     public static void ShowWindow()
     {
         GetWindow<PositionSaver>("Save Objects' Position");
