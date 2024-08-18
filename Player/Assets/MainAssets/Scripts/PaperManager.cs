@@ -31,8 +31,6 @@ public class PaperManager : MonoBehaviour
     //記得用editor儲存所有位置之後才能引用位置資訊
 
     //未實裝貼紙撕掉功能
-    //到時候所有paperItem會包起來想用PaperManager陣列存
-    //記得添加collier和tag
     //frog目前沒呼叫方法只有碰撞
     //原始物件未刪除 等成功之後再刪除改用實例化
 
@@ -88,6 +86,7 @@ public class PaperManager : MonoBehaviour
             // 實例化貼紙對應的 3D 模型
             GameObject PaperObject = Instantiate(p.Paper);
             PaperObject.name = p.PatternType + "_" + p.ID;
+            PaperObject.tag = "Paper";
             if (p.CurrentTransfrom != null && p.CurrentTransfrom.gameObject.scene.IsValid())
             {
                 PaperObject.transform.SetParent(newParent.transform); // 手動設置為父物件，因為靜態資產無法直接實例化成為場景最高層級物件
@@ -104,6 +103,17 @@ public class PaperManager : MonoBehaviour
             PaperObject.transform.localScale = new Vector3(p.Size, p.Size, p.Size);
             PaperObject.transform.position = p.CurrentTransfrom.position;
             PaperObject.transform.rotation = p.CurrentTransfrom.rotation;
+
+            //增加碰撞
+            if(PaperObject.GetComponent<BoxCollider>() == null)
+            {
+                BoxCollider AddedCollider = PaperObject.AddComponent<BoxCollider>();
+                Vector3 originalSize = AddedCollider.size;
+                float newHeight = renderer.bounds.size.y + 0.01f;
+
+                AddedCollider.size = new Vector3(originalSize.x, newHeight, originalSize.z);
+
+            }
         }
         else
         {

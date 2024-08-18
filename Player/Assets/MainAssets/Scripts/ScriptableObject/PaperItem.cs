@@ -25,7 +25,7 @@ public class PaperItem : ScriptableObject
 
     public PaperItem()
     { //建構子
-        
+       
     }
 
     

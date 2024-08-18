@@ -3,16 +3,11 @@ guid: fecb24b1f54e5e64fb47174e52248da0
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: color
-    second: {fileID: 2100000, guid: 9dea61c5cc8eeaa48bc469610a738b37, type: 2}
+  externalObjects: {}
   materials:
     materialImportMode: 0
     materialName: 0
-    materialSearch: 0
+    materialSearch: 1
     materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
@@ -82,7 +77,7 @@ ModelImporter:
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
   referencedClips: []
-  importAnimation: 0
+  importAnimation: 1
   humanDescription:
     serializedVersion: 3
     human: []

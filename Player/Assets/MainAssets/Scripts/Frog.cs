@@ -41,6 +41,7 @@ public class Frog : MonoBehaviour
         anim = GetComponent<Animator>();
         CameraShake = Camera.main.GetComponent<CameraShake>();
         
+        
     }
 
     // 青蛙朝向要調整預設值
@@ -102,8 +103,11 @@ public class Frog : MonoBehaviour
     void OnCollisionEnter(Collision other) {
         
         if(other.gameObject.tag == "Paper"){
-            isPaperSearched=true;
-            print("hit");
+            //if(other.gameObject.Color=="red"){
+                isPaperSearched=true;
+                print("hit");
+            //}
+            
         }
     }
   
