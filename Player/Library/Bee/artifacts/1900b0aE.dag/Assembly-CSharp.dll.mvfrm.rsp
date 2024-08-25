@@ -1,5 +1,7 @@
 Library\Bee\artifacts\mvdfrm\Unity.2D.Sprite.Editor.ref.dll_DDBAA27A82CE9E28.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.2D.Tilemap.Editor.ref.dll_436C0E2610862891.mvfrm
+Library\Bee\artifacts\mvdfrm\Unity.Addressables.Editor.ref.dll_E1732519AAB7217E.mvfrm
+Library\Bee\artifacts\mvdfrm\Unity.Addressables.ref.dll_E8DB4810C9946D63.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.Burst.Editor.ref.dll_E2F92DAB6C167CC9.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.Burst.ref.dll_F30DFA20C0DD1968.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.EditorCoroutines.Editor.ref.dll_34ED10A34098B2DB.mvfrm
@@ -17,7 +19,10 @@ Library\Bee\artifacts\mvdfrm\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrar
 Library\Bee\artifacts\mvdfrm\Unity.RenderPipelines.Universal.Editor.ref.dll_0FF7AC68384616B1.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.RenderPipelines.Universal.Runtime.ref.dll_5400A10AF7CC6BEA.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.RenderPipelines.Universal.Shaders.ref.dll_9468B054363B0720.mvfrm
+Library\Bee\artifacts\mvdfrm\Unity.ResourceManager.ref.dll_56EDCE417F1B8EC7.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.Rider.Editor.ref.dll_9B5591808ABA37AF.mvfrm
+Library\Bee\artifacts\mvdfrm\Unity.ScriptableBuildPipeline.Editor.ref.dll_4B3FCA9E6B3358CE.mvfrm
+Library\Bee\artifacts\mvdfrm\Unity.ScriptableBuildPipeline.ref.dll_27C8026E25690113.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.Searcher.Editor.ref.dll_12B7E1785E41BE0E.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.ShaderGraph.Editor.ref.dll_0F50152946DB09D0.mvfrm
 Library\Bee\artifacts\mvdfrm\Unity.TestTools.CodeCoverage.Editor.OpenCover.Model.ref.dll_D3B9364D6FB03093.mvfrm

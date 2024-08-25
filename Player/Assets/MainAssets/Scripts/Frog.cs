@@ -16,9 +16,11 @@ public class Frog : MonoBehaviour
     Vector3 TargetPosition;//當前目標
     bool isMovingFrog;
     bool isMovedToEnd;
-    bool isPaperSearched;
+    public static bool isPaperSearched;
+
     //
     CameraShake CameraShake;//鏡頭抖動腳本
+    PaperDisappear call;//紙消失腳本
     
 
     
@@ -40,7 +42,7 @@ public class Frog : MonoBehaviour
         //
         anim = GetComponent<Animator>();
         CameraShake = Camera.main.GetComponent<CameraShake>();
-        
+        call=GameObject.Find("PaperManager").GetComponent<PaperDisappear>();
         
     }
 
@@ -53,10 +55,7 @@ public class Frog : MonoBehaviour
         }else{
             anim.SetBool("FrogJump",false);
         }
-        if(isPaperSearched){
-            //Invoke("PaperSearched",2f);
-            isPaperSearched=false;
-        }
+        
     }
    
     
@@ -102,12 +101,11 @@ public class Frog : MonoBehaviour
     }
     void OnCollisionEnter(Collision other) {
         
-        if(other.gameObject.tag == "Paper"){
-            //if(other.gameObject.Color=="red"){
-                isPaperSearched=true;
-                print("hit");
-            //}
+        if(other.gameObject.tag == "Paper" && isPaperSearched==false){
             
+                call.callDisappear(other.gameObject);
+                print("hit");
+                isPaperSearched=true;
         }
     }
   
