@@ -11,27 +11,36 @@ public class LoadMaterialAssests : MonoBehaviour
     public string materialsLabel = "SandLevel"; // 设置标签来加载材质
     public static Material[] MaterialAssests; //材質
 
-    void Start()
+    async void Start()
     {
-        LoadMaterialsWithLabel();
+        bool isLoaded = await LoadMaterialsWithLabel();
     }
-
     public async Task<bool> LoadMaterialsWithLabel()
     {
-        
-        var handle = Addressables.LoadAssetsAsync<Material>(materialsLabel, null);
-        await handle.Task; // 等待异步操作完成
+        try
+        {
+            var handle = Addressables.LoadAssetsAsync<Material>(materialsLabel, null);
+            await handle.Task; // 等待异步操作完成
 
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            // 获取所有加载的材质
-            MaterialAssests = handle.Result.ToArray();
-            return true;
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                // 获取所有加载的材质
+                MaterialAssests = handle.Result.ToArray();
+                return true;
+            }
+            else
+            {
+                Debug.LogError("Failed to load materials with label.");
+                return false;
+            }
         }
-        else
+        catch (System.Exception ex)
         {
-            Debug.LogError("Failed to load materials with label.");
+            Debug.LogError($"Exception occurred while loading materials: {ex.Message}");
             return false;
         }
     }
+
+ 
+   
 }

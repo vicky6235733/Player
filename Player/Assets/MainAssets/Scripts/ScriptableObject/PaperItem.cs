@@ -13,6 +13,7 @@ public class PaperItem : ScriptableObject
     public Transform CurrentTransfrom; //位置
     public bool State; //狀態
     public int ID; //編號
+    public string GroupName="null"; //群組名稱
     
 
     //
@@ -24,10 +25,7 @@ public class PaperItem : ScriptableObject
     public Renderer _ren;
     public Color StartColor;
 
-    public PaperItem()
-    { //建構子
-       
-    }
+    
 
  
     

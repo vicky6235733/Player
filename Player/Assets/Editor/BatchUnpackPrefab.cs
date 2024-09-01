@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class BatchUnpackPrefab : EditorWindow
 {
-    [MenuItem("Tools/批量斷開物件與資產連結")]
+    [MenuItem("Tools/批量断开物件与资产连接")]
     public static void ShowWindow()
     {
         GetWindow<BatchUnpackPrefab>("Batch Unpack Prefabs");
@@ -31,7 +31,8 @@ public class BatchUnpackPrefab : EditorWindow
         {
             PrefabInstanceStatus prefabInstanceStatus = PrefabUtility.GetPrefabInstanceStatus(obj);
 
-            if (prefabInstanceStatus == PrefabInstanceStatus.Connected || prefabInstanceStatus == PrefabInstanceStatus.Disconnected)
+            // 只检查 Prefab 是否为 Connected 状态
+            if (prefabInstanceStatus == PrefabInstanceStatus.Connected)
             {
                 PrefabUtility.UnpackPrefabInstance(obj, PrefabUnpackMode.Completely, InteractionMode.UserAction);
                 Debug.Log($"{obj.name} has been unpacked.");

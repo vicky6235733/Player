@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 
 [System.Serializable]
-public class PositionData
+public class PositionDataEditor
 {
     public string ObjectName;  // 改為 string，因為 GameObject 無法直接序列化為 JSON
     public Vector3 Position;
@@ -13,9 +13,9 @@ public class PositionData
 }
 
 [System.Serializable]
-public class PositionDataList
+public class PositionDataListEditor
 {
-    public List<PositionData> positions = new List<PositionData>();
+    public List<PositionDataEditor> positions = new List<PositionDataEditor>();
 }
 
 public class PositionSaver : EditorWindow
@@ -121,11 +121,11 @@ public class PositionSaver : EditorWindow
 
     void SavePositions()
     {
-        PositionDataList positionDataList = new PositionDataList();
+        PositionDataListEditor positionDataList = new PositionDataListEditor();
 
         foreach (GameObject obj in objectsToSave)
         {
-            PositionData data = new PositionData
+            PositionDataEditor data = new PositionDataEditor
             {
                 ObjectName = obj.name,
                 Position = obj.transform.position,
