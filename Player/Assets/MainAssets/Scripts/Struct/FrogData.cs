@@ -27,6 +27,7 @@ public class FrogData : MonoBehaviour
     public int Number;
     Vector3 _ip;
     public string Color;
+    public FrogDataStruct frog;
 
     void Start()
     {
@@ -34,7 +35,7 @@ public class FrogData : MonoBehaviour
 
         if (Number != 0 && Color != null)
         {
-            FrogDataStruct frog = new FrogDataStruct(Number, _ip, Color);
+            frog = new FrogDataStruct(Number, _ip, Color);
         }
     }
 }

@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
 
 public class Frog : MonoBehaviour
 {
-    public PaperItem TargetItem;
     public Transform StartObject;
     public Transform EndOnject;
+    FrogDataStruct frogStruct;
     Animator anim;
     Vector3 StartPoint; //起點
     Vector3 EndPoint; //終點
@@ -27,6 +27,7 @@ public class Frog : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        frogStruct = GetComponent<FrogData>().frog;
         //
         StartPoint = StartObject.position;
         EndPoint = EndOnject.position;
@@ -65,11 +66,14 @@ public class Frog : MonoBehaviour
     }
 
     IEnumerator JumpToTarget()
-    { //在update每偵更新插值會有時間衝突
+    {
         Vector3 StartPosition = transform.position; //在一次跳躍中的起點
         TargetPosition = isMovedToEnd ? StartPoint : EndPoint; //在一次跳躍中的終點
 
-        //計算拋物線
+        Vector3 directionToTarget = (TargetPosition - StartPosition).normalized;
+        Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 1f); // 立即朝向目標
+
         float MoveDistance = Vector3.Distance(transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
         float now = 0;
@@ -78,9 +82,14 @@ public class Frog : MonoBehaviour
         {
             now += Time.deltaTime;
             float t = now / JumpDuration; //當前時間段數值
-            float CurrentHeight = Mathf.Sin(t * Mathf.PI) * JumpHeight; //用數學取出當前時段必須在的弧線高度
+
+            // 改變曲線使起跳快而下降慢
+            float curvedT = Mathf.Sin(t * Mathf.PI * 0.5f); // 起跳快，下降慢
+            float CurrentHeight = Mathf.Sin(t * Mathf.PI) * JumpHeight; // 拋物線高度
+
             transform.position =
-                Vector3.Lerp(StartPosition, TargetPosition, t) + new Vector3(0, CurrentHeight, 0);
+                Vector3.Lerp(StartPosition, TargetPosition, curvedT)
+                + new Vector3(0, CurrentHeight, 0);
 
             yield return null;
         }

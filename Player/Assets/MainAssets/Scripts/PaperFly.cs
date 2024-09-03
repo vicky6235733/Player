@@ -48,7 +48,7 @@ public class PaperFly : MonoBehaviour
                 float lerp = Mathf.Clamp01(elapsedTime / FadeDuration);
                 Color newColor = initialColor;
                 newColor.a = Mathf.Lerp(color.a, 0, lerp); // 渐变到完全透明
-                Debug.Log(newColor.a);
+              
                 re.GetPropertyBlock(materialPropertyBlock);
                 materialPropertyBlock.SetColor("_BaseColor", newColor);
                 re.SetPropertyBlock(materialPropertyBlock);
