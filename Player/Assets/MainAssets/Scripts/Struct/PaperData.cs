@@ -31,7 +31,7 @@ public class PaperData : MonoBehaviour
     public int _id; //編號
     public string _group; //群組名稱
 
-    void Start()
+    void Awake()
     {
         
 

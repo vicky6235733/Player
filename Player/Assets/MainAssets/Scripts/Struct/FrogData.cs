@@ -19,6 +19,7 @@ public struct FrogDataStruct
         this.InitialPoint = ip;
         this.CurrentPoint = ip;
         this.TargetPoint = Vector3.zero;
+
     }
 }
 
@@ -29,7 +30,7 @@ public class FrogData : MonoBehaviour
     public string Color;
     public FrogDataStruct frog;
 
-    void Start()
+    void Awake()
     {
         _ip = transform.position;
 

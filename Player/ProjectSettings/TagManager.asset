@@ -6,6 +6,8 @@ TagManager:
   tags:
   - floor
   - Paper
+  - trigger
+  - Frog
   layers:
   - Default
   - TransparentFX

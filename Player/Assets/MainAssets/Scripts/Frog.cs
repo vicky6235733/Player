@@ -5,10 +5,15 @@ using UnityEngine;
 
 public class Frog : MonoBehaviour
 {
-    public Transform StartObject;
-    public Transform EndOnject;
+    //
     FrogDataStruct frogStruct;
+    PaperItemStruct paperStruct;
+    ColorPapaerStruct colorStruct;
+    GameObject CurrentTarget;
+
+    //
     Animator anim;
+    public Transform[] Point; //初始位置
     Vector3 StartPoint; //起點
     Vector3 EndPoint; //終點
     float MoveSpeed;
@@ -21,16 +26,19 @@ public class Frog : MonoBehaviour
     public static bool isPaperSearched;
 
     //
-    CameraShake CameraShake; //鏡頭抖動腳本
+    //CameraShake CameraShake; //鏡頭抖動腳本
     PaperFly call; //紙消失腳本
 
-    // Start is called before the first frame update
     void Start()
     {
-        frogStruct = GetComponent<FrogData>().frog;
+        frogStruct = this.gameObject.GetComponent<FrogData>().frog;
         //
-        StartPoint = StartObject.position;
-        EndPoint = EndOnject.position;
+        if (Point != null)
+        {
+            StartPoint = Point[0].position;
+            EndPoint = Point[1].position;
+        }
+
         //初始化目標點
         TargetPosition = EndPoint;
         //
@@ -41,7 +49,7 @@ public class Frog : MonoBehaviour
         isPaperSearched = false;
         //
         anim = GetComponent<Animator>();
-        CameraShake = Camera.main.GetComponent<CameraShake>();
+        //CameraShake = Camera.main.GetComponent<CameraShake>();
         call = FindObjectsOfType<PaperFly>().FirstOrDefault();
     }
 
@@ -62,7 +70,31 @@ public class Frog : MonoBehaviour
     void MoveFrog()
     {
         isMovingFrog = true;
+        FrogTargetCounting();
         StartCoroutine(JumpToTarget());
+    }
+
+    void FrogTargetCounting()
+    {
+        if (paperStruct.PatternType != null)
+        {
+            colorStruct = FindObjectsOfType<ColorData>()
+                .Where(ColorData =>
+                    ColorData.colorPaper.PatternType != null
+                    && ColorData.colorPaper.PatternType == paperStruct.PatternType
+                )
+                .Select(ColorData => ColorData.colorPaper)
+                .FirstOrDefault();
+
+            if (colorStruct.Activity == true)
+            {
+                if (transform.position == StartPoint)
+                {
+                    EndPoint = Point[2].position;
+                    JumpHeight = 5f;
+                }
+            }
+        }
     }
 
     IEnumerator JumpToTarget()
@@ -70,9 +102,11 @@ public class Frog : MonoBehaviour
         Vector3 StartPosition = transform.position; //在一次跳躍中的起點
         TargetPosition = isMovedToEnd ? StartPoint : EndPoint; //在一次跳躍中的終點
 
+   
         Vector3 directionToTarget = (TargetPosition - StartPosition).normalized;
         Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 1f); // 立即朝向目標
+        transform.eulerAngles = new Vector3(0, transform.eulerAngles.y, 0);//校正XZ旋轉
 
         float MoveDistance = Vector3.Distance(transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
@@ -95,29 +129,38 @@ public class Frog : MonoBehaviour
         }
         transform.position = TargetPosition;
 
-        if (CameraShake != null)
+        /*if (CameraShake != null)
         {
             StartCoroutine(CameraShake.Shake(0.65f, 0.35f));
-        }
+        }*/
 
         yield return new WaitForSeconds(2f);
 
         //交換起點終點位置 狀態
         isMovedToEnd = !isMovedToEnd;
         isMovingFrog = false;
-        transform.Rotate(Vector3.up, 180f);
+     
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject != null)
+        if (other.gameObject != null && other.gameObject.tag == "Paper" && isPaperSearched == false)
         {
-            if (other.gameObject.tag == "Paper" && isPaperSearched == false)
+            CurrentTarget = other.gameObject;
+            paperStruct = CurrentTarget.GetComponent<PaperData>().paper;
+            string paperColor = CurrentTarget.GetComponent<PaperData>().paper.Color;
+
+            if (frogStruct.Color == paperColor)//青蛙和貼紙顏色匹配
             {
-                call.callDisappear(other.gameObject);
-                print("hit");
+                Invoke("WaitedForCall", 1f);
                 isPaperSearched = true;
             }
         }
+    }
+
+    void WaitedForCall()
+    {
+        call.callDisappear(CurrentTarget);
+        CurrentTarget.GetComponent<PaperData>().paper.State = true;
     }
 }

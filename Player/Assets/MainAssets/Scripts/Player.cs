@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -39,16 +41,35 @@ public class Player : MonoBehaviour
     //
     Animator anim;
     public static bool SpintAnimationRestart; //衝刺動畫是否能重新觸發(在update)
+
     //
-    
+    List<GameObject> targetGroup;
+
+    //
+    SkinnedMeshRenderer[] rend; //1 4 8 suger
+    public Material[] matBody;
+    public Material[] matSuger;
+    string ColorName;
+    string[] AllColor = { "null","red", "yellow", "blue", "green", "orange", "purple" };
+
+    //
+
 
     void Start()
     {
-        anim = GetComponent<Animator>();
-
-        AnimaController(1f);
-
         //初始化
+        anim = GetComponent<Animator>();
+        AnimaController(1f);
+        //
+        rend = new SkinnedMeshRenderer[8];
+        for (int i = 0; i < 8; i++)
+        {
+            rend[i] = transform.GetChild(i).gameObject.GetComponent<SkinnedMeshRenderer>();
+           
+
+        }
+        ColorName = "null";
+        //
         rb = GetComponent<Rigidbody>();
         GroundLayer = LayerMask.GetMask("Ground");
         GroundRayLength = 1f;
@@ -56,16 +77,16 @@ public class Player : MonoBehaviour
         CollisionRayLength = 2.5f;
         decelerationFactor = 1f;
         //
-        MoveSpeed = 5f;
+        MoveSpeed = 3.5f;
         Speed = MoveSpeed * 2;
-        JumpForce = 400f;
-        RotateSpeed = 100f;
+        JumpForce = 450;
+        RotateSpeed = 400;
         //
         MoveDirection = Vector3.zero;
         MoveAmount = Vector3.zero;
         //
         knockBackAngle = 180f;
-        KnockBackForce = 100f;
+        KnockBackForce = 40f;
         KnockDackDuration = 0.5f;
         knockBackKeeper = 0;
         //
@@ -74,13 +95,17 @@ public class Player : MonoBehaviour
         isSlowDown = false;
         ColliderEntered = false;
         isSprinting = false; //觸發update衝刺
+
         //
         SpintAnimationRestart = true;
     }
 
     //目前剩餘射線優化(在一個物件設置多個碰撞，並分別引用Layer，來同時偵測地板和牆壁)
-    //衝刺動畫優化
     //跳躍動畫和idle衝突
+    //OnCollisionEnter 方法中，你應該避免將 ColliderEntered 設置為 true
+    //爬牆實裝
+    //碰撞防止穿牆優化(碰到牆壁的時候玩家不能移動)、青蛙碰撞優化
+    
 
     //注意防止穿到地板下的部分數值有點奇怪
     void Update()
@@ -117,7 +142,9 @@ public class Player : MonoBehaviour
         {
             anim.SetBool("Jump", true);
             rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
-        }else{
+        }
+        else
+        {
             anim.SetBool("Jump", false);
         }
 
@@ -149,6 +176,33 @@ public class Player : MonoBehaviour
             Vector3 MoveLength = new Vector3(0, 0, ver);
             rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
             AnimaController(2f);
+        }
+
+        //attack
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            anim.SetBool("Attack", true);
+            Ray ray = new Ray(FloorPosition, Vector3.down);
+            RaycastHit[] hits = Physics.RaycastAll(ray, GroundRayLength);
+            foreach (RaycastHit hit in hits)
+            {
+                // 检查射线击中的物体是否具有目标标签
+                if (hit.collider != null && hit.collider.CompareTag("trigger"))//trigger僅限於教學
+                {
+                    GameObject TriggerObject = hit.collider.gameObject;
+                    targetGroup = GetTargetColorPaper<ColorData>(TriggerObject);
+                    if (Checkcolor())
+                    {
+                        Invoke("DrawColor", 1.5f);
+                    }else{
+                        Debug.Log("Player check color wrong");
+                    }
+                }
+            }
+        }
+        else
+        {
+            anim.SetBool("Attack", false);
         }
 
         //slowDown(減速)
@@ -255,8 +309,17 @@ public class Player : MonoBehaviour
                 rb.velocity = Vector3.zero;
             }
             ColliderEntered = true;
-            KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
+             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
         }
+        if (other.gameObject.tag == "Frog")
+        {
+            ChangeMaterial(
+                Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color)
+            );
+            ColorName =other.gameObject.GetComponent<FrogData>().frog.Color;
+            
+        }
+       
     }
 
     void KnockBack(Collision target) //彈回
@@ -270,5 +333,65 @@ public class Player : MonoBehaviour
         rb.AddForce(KnockBackDiraction * KnockBackForce, ForceMode.Impulse); //增加彈回力度
         isKnockBack = true; //正在彈回
         knockBackKeeper = KnockDackDuration; //重設彈回時間，並到upate減少至0
+    }
+
+    void DrawColor()
+    {
+        foreach (GameObject item in targetGroup)
+        {
+            item.SetActive(true);
+            item.GetComponent<ColorData>().colorPaper.Activity = true;
+        }
+    }
+
+    void ChangeMaterial(int num)
+    {
+        
+        rend[0].material = matSuger[num]; //1
+        rend[1].material = matBody[num];
+        rend[2].material = matBody[num];
+        rend[3].material = matSuger[num]; //4
+        rend[4].material = matBody[num];
+        rend[5].material = matBody[num];
+        rend[6].material = matBody[num];
+        rend[7].material = matSuger[num]; //8
+    }
+
+    bool Checkcolor()
+    {
+        
+   
+        if (targetGroup != null)
+        {
+            if (ColorName == targetGroup[0].GetComponent<ColorData>().colorPaper.Color)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }else{
+            return false;
+        }
+    }
+
+    public List<GameObject> GetTargetColorPaper<T>(GameObject trigger)
+        where T : Component //尋找具有特定組件的子物件
+    {
+        List<GameObject> childrenWithComponent = new List<GameObject>();
+
+        for (int i = 0; i < trigger.transform.childCount; i++)
+        {
+            Transform child = trigger.transform.GetChild(i);
+
+            // 检查子物体是否具有 T 类型的组件
+            if (child.GetComponent<T>() != null)
+            {
+                childrenWithComponent.Add(child.gameObject);
+            }
+        }
+
+        return childrenWithComponent;
     }
 }

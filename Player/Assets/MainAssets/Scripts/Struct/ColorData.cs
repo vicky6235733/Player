@@ -36,25 +36,17 @@ public class ColorData : MonoBehaviour
     public string _group; //一起撕的貼紙
     public bool _act; //狀態
     public int id; //編號
+    public ColorPapaerStruct colorPaper;
 
-    void Start()
+    void Awake()
     {
         _act = false;
 
         if (_patten != null && color != null && id != 0)
         {
             _group = _group != null ? _group : "null";
-            ColorPapaerStruct colorPaper = new ColorPapaerStruct(
-                _patten,
-                color,
-                _group,
-                this.gameObject,
-                _act,
-                id
-            );
-
+            colorPaper = new ColorPapaerStruct(_patten, color, _group, this.gameObject, _act, id);
         }
-        Debug.Log("ColorData loaded");
         this.gameObject.SetActive(_act);
     }
 }
