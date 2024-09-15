@@ -14,8 +14,8 @@ public class Frog : MonoBehaviour
     //
     Animator anim;
     public Transform[] Point; //初始位置
-    Vector3 StartPoint; //起點
-    Vector3 EndPoint; //終點
+    public Vector3 StartPoint; //起點
+    public Vector3 EndPoint; //終點
     float MoveSpeed;
     float JumpHeight;
 
@@ -25,6 +25,8 @@ public class Frog : MonoBehaviour
     bool isMovedToEnd;
     public static bool isPaperSearched;
 
+    bool isBigJumping; //和isMovingFrog同個東西，用來偵測大青蛙的，避免update一直跑
+
     //
     //CameraShake CameraShake; //鏡頭抖動腳本
     PaperFly call; //紙消失腳本
@@ -32,12 +34,9 @@ public class Frog : MonoBehaviour
     void Start()
     {
         frogStruct = this.gameObject.GetComponent<FrogData>().frog;
+        isMovingFrog = false;
         //
-        if (Point != null)
-        {
-            StartPoint = Point[0].position;
-            EndPoint = Point[1].position;
-        }
+
 
         //初始化目標點
         TargetPosition = EndPoint;
@@ -47,6 +46,7 @@ public class Frog : MonoBehaviour
         isMovingFrog = false;
         isMovedToEnd = false;
         isPaperSearched = false;
+        isBigJumping = false;
         //
         anim = GetComponent<Animator>();
         //CameraShake = Camera.main.GetComponent<CameraShake>();
@@ -67,10 +67,13 @@ public class Frog : MonoBehaviour
         }
     }
 
-    void MoveFrog()
+    public void MoveFrog()
     {
         isMovingFrog = true;
+        isBigJumping = true;
+
         FrogTargetCounting();
+
         StartCoroutine(JumpToTarget());
     }
 
@@ -97,16 +100,15 @@ public class Frog : MonoBehaviour
         }
     }
 
-    IEnumerator JumpToTarget()
+    public virtual IEnumerator JumpToTarget()
     {
         Vector3 StartPosition = transform.position; //在一次跳躍中的起點
         TargetPosition = isMovedToEnd ? StartPoint : EndPoint; //在一次跳躍中的終點
 
-   
         Vector3 directionToTarget = (TargetPosition - StartPosition).normalized;
         Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 1f); // 立即朝向目標
-        transform.eulerAngles = new Vector3(0, transform.eulerAngles.y, 0);//校正XZ旋轉
+        transform.eulerAngles = new Vector3(0, transform.eulerAngles.y, 0); //校正XZ旋轉
 
         float MoveDistance = Vector3.Distance(transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
@@ -138,22 +140,30 @@ public class Frog : MonoBehaviour
 
         //交換起點終點位置 狀態
         isMovedToEnd = !isMovedToEnd;
+
         isMovingFrog = false;
-     
+        yield break;
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject != null && other.gameObject.tag == "Paper" && isPaperSearched == false)
+        if (frogStruct.State == 1)
         {
-            CurrentTarget = other.gameObject;
-            paperStruct = CurrentTarget.GetComponent<PaperData>().paper;
-            string paperColor = CurrentTarget.GetComponent<PaperData>().paper.Color;
-
-            if (frogStruct.Color == paperColor)//青蛙和貼紙顏色匹配
+            if (
+                other.gameObject != null
+                && other.gameObject.tag == "Paper"
+                && isPaperSearched == false
+            )
             {
-                Invoke("WaitedForCall", 1f);
-                isPaperSearched = true;
+                CurrentTarget = other.gameObject;
+                paperStruct = CurrentTarget.GetComponent<PaperData>().paper;
+                string paperColor = CurrentTarget.GetComponent<PaperData>().paper.Color;
+
+                if (frogStruct.Color == paperColor) //青蛙和貼紙顏色匹配
+                {
+                    Invoke("WaitedForCall", 1f);
+                    isPaperSearched = true;
+                }
             }
         }
     }

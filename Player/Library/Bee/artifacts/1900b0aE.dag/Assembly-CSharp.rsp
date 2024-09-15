@@ -383,6 +383,7 @@
 "Assets/MainAssets/Scripts/AniBehaviour/AniSprinting.cs"
 "Assets/MainAssets/Scripts/AniBehaviour/AniSprintStart.cs"
 "Assets/MainAssets/Scripts/AniBehaviour/PlayerAnimation.cs"
+"Assets/MainAssets/Scripts/BigSandFrog.cs"
 "Assets/MainAssets/Scripts/CameraShake.cs"
 "Assets/MainAssets/Scripts/Frog.cs"
 "Assets/MainAssets/Scripts/LoadMaterialAssests.cs"

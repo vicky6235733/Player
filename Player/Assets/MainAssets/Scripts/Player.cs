@@ -40,6 +40,7 @@ public class Player : MonoBehaviour
 
     //
     Animator anim;
+    public Animator Smoke;
     public static bool SpintAnimationRestart; //衝刺動畫是否能重新觸發(在update)
 
     //
@@ -118,6 +119,7 @@ public class Player : MonoBehaviour
         if (MoveDirection == Vector3.zero && isOnFloor)
         {
             AnimaController(1f);
+            Smoke.SetBool("Smoke", false);
         }
 
         //rotate
@@ -176,6 +178,7 @@ public class Player : MonoBehaviour
             Vector3 MoveLength = new Vector3(0, 0, ver);
             rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
             AnimaController(2f);
+            Smoke.SetBool("Smoke", true);
         }
 
         //attack
