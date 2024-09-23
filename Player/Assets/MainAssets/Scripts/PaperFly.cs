@@ -65,7 +65,7 @@ public class PaperFly : MonoBehaviour
         if (re != null && elapsedTime >= FadeDuration)
         {
             item.SetActive(false);
-            Frog.isPaperSearched = false;
+            
             yield break;
         }
     }

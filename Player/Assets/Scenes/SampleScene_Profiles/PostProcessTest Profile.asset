@@ -1,5 +1,33 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3369158533803950108
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 556797029e73b2347956b6579e77e05b, type: 3}
+  m_Name: DepthOfField
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  focusDistance:
+    overrideState: 1
+    value: 5
+  aperture:
+    overrideState: 0
+    value: 2.1
+  focalLength:
+    overrideState: 1
+    value: 20
+  kernelSize:
+    overrideState: 1
+    value: 2
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13,8 +41,9 @@ MonoBehaviour:
   m_Name: PostProcessTest Profile
   m_EditorClassIdentifier: 
   settings:
-  - {fileID: 8209452300443293337}
---- !u!114 &8209452300443293337
+  - {fileID: -3369158533803950108}
+  - {fileID: 3552618699581210929}
+--- !u!114 &3552618699581210929
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -23,28 +52,46 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b77c5407dc277943b591ade9e6b18c5, type: 3}
-  m_Name: LensDistortion
+  m_Script: {fileID: 11500000, guid: c1cb7e9e120078f43bce4f0b1be547a7, type: 3}
+  m_Name: AmbientOcclusion
   m_EditorClassIdentifier: 
   active: 1
   enabled:
     overrideState: 1
     value: 1
+  mode:
+    overrideState: 1
+    value: 1
   intensity:
     overrideState: 1
-    value: 30
-  intensityX:
+    value: 4
+  color:
     overrideState: 1
+    value: {r: 0.94716984, g: 0.8667732, b: 0.62012815, a: 1}
+  ambientOnly:
+    overrideState: 0
     value: 1
-  intensityY:
-    overrideState: 1
-    value: 1
-  centerX:
+  noiseFilterTolerance:
     overrideState: 0
     value: 0
-  centerY:
+  blurTolerance:
+    overrideState: 0
+    value: -4.6
+  upsampleTolerance:
+    overrideState: 0
+    value: -12
+  thicknessModifier:
+    overrideState: 0
+    value: 1
+  zBias:
+    overrideState: 0
+    value: 0.0001
+  directLightingStrength:
     overrideState: 0
     value: 0
-  scale:
-    overrideState: 1
-    value: 3.67
+  radius:
+    overrideState: 0
+    value: 0.25
+  quality:
+    overrideState: 0
+    value: 2

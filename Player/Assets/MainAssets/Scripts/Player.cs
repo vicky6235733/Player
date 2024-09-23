@@ -10,6 +10,9 @@ public class Player : MonoBehaviour
     Rigidbody rb;
     Vector3 MoveDirection; //方向數值
     Vector3 MoveAmount; //位移距離
+    Quaternion lastRotation; // 上次的旋轉值
+    Quaternion currentRotation; // 當前的旋轉值
+    public static float rotationDifference; // 旋轉差值
 
     //
     LayerMask GroundLayer; //地板圖層
@@ -36,6 +39,7 @@ public class Player : MonoBehaviour
     bool isKnockBack;
     bool isSprinting; //是否正在衝刺
     bool isOnFloor;
+    bool isGettingRotation;
     static bool ColliderEntered;
 
     //
@@ -51,7 +55,7 @@ public class Player : MonoBehaviour
     public Material[] matBody;
     public Material[] matSuger;
     string ColorName;
-    string[] AllColor = { "null","red", "yellow", "blue", "green", "orange", "purple" };
+    string[] AllColor = { "null", "red", "yellow", "blue", "green", "orange", "purple" };
 
     //
 
@@ -61,13 +65,13 @@ public class Player : MonoBehaviour
         //初始化
         anim = GetComponent<Animator>();
         AnimaController(1f);
+        lastRotation = transform.rotation;
+        rotationDifference = 0;
         //
         rend = new SkinnedMeshRenderer[8];
         for (int i = 0; i < 8; i++)
         {
             rend[i] = transform.GetChild(i).gameObject.GetComponent<SkinnedMeshRenderer>();
-           
-
         }
         ColorName = "null";
         //
@@ -78,10 +82,11 @@ public class Player : MonoBehaviour
         CollisionRayLength = 2.5f;
         decelerationFactor = 1f;
         //
-        MoveSpeed = 3.5f;
+        MoveSpeed = 2.3f;
         Speed = MoveSpeed * 2;
         JumpForce = 450;
-        RotateSpeed = 400;
+        RotateSpeed = 200f;
+
         //
         MoveDirection = Vector3.zero;
         MoveAmount = Vector3.zero;
@@ -94,6 +99,7 @@ public class Player : MonoBehaviour
         isKnockBack = false;
         isOnFloor = true;
         isSlowDown = false;
+        isGettingRotation = false;
         ColliderEntered = false;
         isSprinting = false; //觸發update衝刺
 
@@ -106,7 +112,7 @@ public class Player : MonoBehaviour
     //OnCollisionEnter 方法中，你應該避免將 ColliderEntered 設置為 true
     //爬牆實裝
     //碰撞防止穿牆優化(碰到牆壁的時候玩家不能移動)、青蛙碰撞優化
-    
+
 
     //注意防止穿到地板下的部分數值有點奇怪
     void Update()
@@ -119,14 +125,25 @@ public class Player : MonoBehaviour
         if (MoveDirection == Vector3.zero && isOnFloor)
         {
             AnimaController(1f);
-            Smoke.SetBool("Smoke", false);
+            //Smoke.SetBool("Smoke", false);
         }
 
         //rotate
         Vector3 RotateAmount = hor * Vector3.up * RotateSpeed * Time.deltaTime;
         Quaternion deltaRotation = Quaternion.Euler(RotateAmount);
         rb.MoveRotation(rb.rotation * deltaRotation);
-
+        if (hor != 0 && !isGettingRotation)
+        {
+            lastRotation = transform.rotation;
+            isGettingRotation = true;
+        }
+        if (hor == 0 && isGettingRotation)
+        {
+            currentRotation = transform.rotation;
+            GetRotationDifference();
+            isGettingRotation = false;
+        }
+       
         //jump
         Vector3 FloorPosition = transform.position + Vector3.up * 0.5f;
         Vector3 ForwardPosition = transform.position + Vector3.forward * 0.5f;
@@ -178,7 +195,7 @@ public class Player : MonoBehaviour
             Vector3 MoveLength = new Vector3(0, 0, ver);
             rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
             AnimaController(2f);
-            Smoke.SetBool("Smoke", true);
+            //Smoke.SetBool("Smoke", true);
         }
 
         //attack
@@ -190,14 +207,16 @@ public class Player : MonoBehaviour
             foreach (RaycastHit hit in hits)
             {
                 // 检查射线击中的物体是否具有目标标签
-                if (hit.collider != null && hit.collider.CompareTag("trigger"))//trigger僅限於教學
+                if (hit.collider != null && hit.collider.CompareTag("trigger")) //trigger僅限於教學
                 {
                     GameObject TriggerObject = hit.collider.gameObject;
                     targetGroup = GetTargetColorPaper<ColorData>(TriggerObject);
                     if (Checkcolor())
                     {
                         Invoke("DrawColor", 1.5f);
-                    }else{
+                    }
+                    else
+                    {
                         Debug.Log("Player check color wrong");
                     }
                 }
@@ -255,8 +274,19 @@ public class Player : MonoBehaviour
         }
 
         //slowDown
-        SlowDown();
+        //SlowDown();
     }
+
+    void GetRotationDifference()
+    {
+        rotationDifference = 0;
+        rotationDifference += Quaternion.Angle(lastRotation, currentRotation);
+        rotationDifference = (rotationDifference > 180) ? rotationDifference - 360 : rotationDifference;
+        lastRotation = currentRotation;
+        
+    }
+
+
 
     void SlowDown()
     { //如果前方有物體在靠近，就讓玩家減速(避免玩家硬要撞穿模)
@@ -312,17 +342,15 @@ public class Player : MonoBehaviour
                 rb.velocity = Vector3.zero;
             }
             ColliderEntered = true;
-             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
+            KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
         }
         if (other.gameObject.tag == "Frog")
         {
             ChangeMaterial(
                 Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color)
             );
-            ColorName =other.gameObject.GetComponent<FrogData>().frog.Color;
-            
+            ColorName = other.gameObject.GetComponent<FrogData>().frog.Color;
         }
-       
     }
 
     void KnockBack(Collision target) //彈回
@@ -349,7 +377,6 @@ public class Player : MonoBehaviour
 
     void ChangeMaterial(int num)
     {
-        
         rend[0].material = matSuger[num]; //1
         rend[1].material = matBody[num];
         rend[2].material = matBody[num];
@@ -362,8 +389,6 @@ public class Player : MonoBehaviour
 
     bool Checkcolor()
     {
-        
-   
         if (targetGroup != null)
         {
             if (ColorName == targetGroup[0].GetComponent<ColorData>().colorPaper.Color)
@@ -374,7 +399,9 @@ public class Player : MonoBehaviour
             {
                 return false;
             }
-        }else{
+        }
+        else
+        {
             return false;
         }
     }
