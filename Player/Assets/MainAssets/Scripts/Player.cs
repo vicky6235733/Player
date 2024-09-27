@@ -18,6 +18,8 @@ public class Player : MonoBehaviour
     LayerMask GroundLayer; //地板圖層
     float GroundRayLength; //地板射線長度
     RaycastHit hitFloor; //射線偵測到的地板
+    RaycastHit hitWall; //射線偵測到的牆壁
+
     LayerMask CollisionLayer; //牆壁圖層
     float CollisionRayLength; //牆壁射線長度
     float decelerationFactor; //减速因子
@@ -27,6 +29,8 @@ public class Player : MonoBehaviour
     float Speed; //衝刺速度
     float RotateSpeed;
     float JumpForce;
+    float JumpInterval; // 跳躍間隔
+    float LastJumpTime; // 上次跳躍的時間
 
     //撞牆反饋
     float knockBackAngle; //彈回角度
@@ -41,6 +45,7 @@ public class Player : MonoBehaviour
     bool isOnFloor;
     bool isGettingRotation;
     static bool ColliderEntered;
+    bool Sloping;
 
     //
     Animator anim;
@@ -77,22 +82,24 @@ public class Player : MonoBehaviour
         //
         rb = GetComponent<Rigidbody>();
         GroundLayer = LayerMask.GetMask("Ground");
-        GroundRayLength = 1f;
+        GroundRayLength = 0.7f;
         CollisionLayer = LayerMask.GetMask("Collision");
         CollisionRayLength = 2.5f;
         decelerationFactor = 1f;
         //
-        MoveSpeed = 2.3f;
+        MoveSpeed = 3f;
         Speed = MoveSpeed * 2;
         JumpForce = 450;
         RotateSpeed = 200f;
+        JumpInterval = 1f; //跳躍間隔
+        LastJumpTime = Time.time - JumpInterval; // 將上次跳躍時間初始化為在間隔之前的時間
 
         //
         MoveDirection = Vector3.zero;
         MoveAmount = Vector3.zero;
         //
         knockBackAngle = 180f;
-        KnockBackForce = 40f;
+        KnockBackForce = 120f;
         KnockDackDuration = 0.5f;
         knockBackKeeper = 0;
         //
@@ -102,16 +109,17 @@ public class Player : MonoBehaviour
         isGettingRotation = false;
         ColliderEntered = false;
         isSprinting = false; //觸發update衝刺
+        Sloping = false;
 
         //
         SpintAnimationRestart = true;
     }
 
-    //目前剩餘射線優化(在一個物件設置多個碰撞，並分別引用Layer，來同時偵測地板和牆壁)
-    //跳躍動畫和idle衝突
-    //OnCollisionEnter 方法中，你應該避免將 ColliderEntered 設置為 true
     //爬牆實裝
-    //碰撞防止穿牆優化(碰到牆壁的時候玩家不能移動)、青蛙碰撞優化
+    //前方有障礙物的時候不能衝刺未完全實踐功能
+
+    //有時候跳躍動畫會播放但是他不會跳
+    //撞牆硬要往前衝的時候跳不起來
 
 
     //注意防止穿到地板下的部分數值有點奇怪
@@ -143,12 +151,12 @@ public class Player : MonoBehaviour
             GetRotationDifference();
             isGettingRotation = false;
         }
-       
+
         //jump
         Vector3 FloorPosition = transform.position + Vector3.up * 0.5f;
         Vector3 ForwardPosition = transform.position + Vector3.forward * 0.5f;
 
-        //Debug.DrawRay(FloorPosition, Vector3.down * GroundRayLength, Color.red);
+        //偵測地板(用子物件圖層)
         isOnFloor = Physics.Raycast(
             FloorPosition,
             Vector3.down,
@@ -157,22 +165,47 @@ public class Player : MonoBehaviour
             GroundLayer
         ); //射線偵測下方有沒有地板
 
-        if (isOnFloor && Input.GetKeyDown(KeyCode.Space))
+        GameObject item = isOnFloor && hitFloor.collider ? hitFloor.collider.gameObject : null;
+        if ( item != null && item.transform.childCount > 0)
         {
-            anim.SetBool("Jump", true);
-            rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+            foreach (Transform child in item.transform)
+            {
+                // 這裡你可以判斷子物件的Layer是否符合條件
+                if (child.gameObject.layer == LayerMask.NameToLayer("Ground"))
+                {
+                    isOnFloor = true;
+                    break;
+                }
+                else
+                {
+                    isOnFloor = false;
+                }
+            }
+        }else{
+            isOnFloor = false;
         }
-        else
+
+        if (hitFloor.normal.y < 1f)
         {
-            anim.SetBool("Jump", false);
+            Sloping = true;
         }
+        
+        if (
+            isOnFloor
+            && Input.GetKeyDown(KeyCode.Space)
+            && Time.time >= LastJumpTime + JumpInterval
+        )
+        {
+            Jump();
+        }
+        
 
         //防止穿到地板下
         if (!isOnFloor && Mathf.Abs(transform.position.y - hitFloor.point.y) < 0.2f)
         {
             transform.position = new Vector3(
                 transform.position.x - 1f,
-                transform.position.y + 1f,
+                transform.position.y + 10f,
                 transform.position.z - 1f
             );
             rb.velocity = Vector3.zero;
@@ -190,12 +223,34 @@ public class Player : MonoBehaviour
         }
 
         //walk
-        if (MoveDirection != Vector3.zero && !isSprinting)
+        if (!Sloping)
         {
-            Vector3 MoveLength = new Vector3(0, 0, ver);
-            rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
-            AnimaController(2f);
-            //Smoke.SetBool("Smoke", true);
+            if (MoveDirection != Vector3.zero && !isSprinting)
+            {
+                Vector3 MoveLength = new Vector3(0, 0, ver);
+                rb.MovePosition(
+                    rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime)
+                );
+                AnimaController(2f);
+                //Smoke.SetBool("Smoke", true);
+            }
+        }
+        else
+        { //在斜坡上走路
+            if (MoveDirection.magnitude > 0.1f && !isSprinting)
+            {
+                Vector3 MoveLength = new Vector3(0, 0, ver);
+                rb.MovePosition(
+                    rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime)
+                );
+                AnimaController(2f);
+                //Smoke.SetBool("Smoke", true);
+            }
+            else
+            { //修正斜坡走路動畫一直播的問題
+                AnimaController(1f);
+                isOnFloor = true;
+            }
         }
 
         //attack
@@ -217,7 +272,7 @@ public class Player : MonoBehaviour
                     }
                     else
                     {
-                        Debug.Log("Player check color wrong");
+                        Debug.Log("Player color wrong");
                     }
                 }
             }
@@ -231,9 +286,30 @@ public class Player : MonoBehaviour
         isSlowDown = Physics.Raycast(
             ForwardPosition,
             transform.forward,
+            out hitWall,
             CollisionRayLength,
             CollisionLayer
         ); //射線偵測前方有沒有物體
+        GameObject wall = isSlowDown && hitWall.collider ? hitWall.collider.gameObject : null;
+        if ( wall != null && wall.transform.childCount > 0)
+        {
+            foreach (Transform child in wall.transform)
+            {
+                // 這裡你可以判斷子物件的Layer是否符合條件
+                if (child.gameObject.layer == LayerMask.NameToLayer("Collision"))
+                {
+                    isSlowDown = true;
+                    break;
+                }
+                else
+                {
+                    isSlowDown = false;
+                }
+            }
+        }else{
+            isSlowDown = false;
+        }
+        
 
         //knockback(如果正在彈回，就倒數時間然後停止)
         if (isKnockBack)
@@ -277,16 +353,21 @@ public class Player : MonoBehaviour
         //SlowDown();
     }
 
+    void Jump()
+    {
+        anim.SetTrigger("jump");
+        rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+        LastJumpTime = Time.time; // 更新上次跳躍的時間
+    }
+
     void GetRotationDifference()
     {
         rotationDifference = 0;
         rotationDifference += Quaternion.Angle(lastRotation, currentRotation);
-        rotationDifference = (rotationDifference > 180) ? rotationDifference - 360 : rotationDifference;
+        rotationDifference =
+            (rotationDifference > 180) ? rotationDifference - 360 : rotationDifference;
         lastRotation = currentRotation;
-        
     }
-
-
 
     void SlowDown()
     { //如果前方有物體在靠近，就讓玩家減速(避免玩家硬要撞穿模)
@@ -330,22 +411,32 @@ public class Player : MonoBehaviour
     //
     void OnCollisionEnter(Collision other)
     {
-        if (other.gameObject.tag != "floor") //如果撞到物體就停下，然後彈回
+        if (other.gameObject.transform.childCount > 0)
         {
-            MoveAmount = Vector3.zero; //停止移動
-            if (rb.velocity.magnitude > 0.1f)
+            foreach (Transform child in other.gameObject.transform)
             {
-                rb.AddForce(-rb.velocity.normalized); //給予反向力讓玩家停止
+                // 這裡你可以判斷子物件的Layer是否符合條件
+                if (child.gameObject.layer == LayerMask.NameToLayer("Collision"))
+                {
+                    MoveAmount = Vector3.zero; //停止移動
+                    if (rb.velocity.magnitude > 0.1f)
+                    {
+                        rb.AddForce(-rb.velocity.normalized); //給予反向力讓玩家停止
+                    }
+                    else
+                    { // 避免來回震動，將速度限制在接近零時直接設為零
+                        rb.velocity = Vector3.zero;
+                    }
+                    ColliderEntered = true;
+                    KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
+                }
             }
-            else
-            { // 避免來回震動，將速度限制在接近零時直接設為零
-                rb.velocity = Vector3.zero;
-            }
-            ColliderEntered = true;
-            KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
         }
+
         if (other.gameObject.tag == "Frog")
         {
+            ColliderEntered = true;
+            KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
             ChangeMaterial(
                 Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color)
             );
@@ -355,15 +446,19 @@ public class Player : MonoBehaviour
 
     void KnockBack(Collision target) //彈回
     {
-        Vector3 KnockBackDiraction = (transform.position - target.transform.position).normalized;
+        Vector3 KnockBackDirection = (transform.position - target.transform.position).normalized;
 
         float radians = knockBackAngle * Mathf.Deg2Rad;
-        KnockBackDiraction.y = Mathf.Sin(radians); //計算彈回角度
-        KnockBackDiraction = KnockBackDiraction.normalized; //正規化
+        KnockBackDirection.y = Mathf.Sin(radians); // 計算彈回角度
 
-        rb.AddForce(KnockBackDiraction * KnockBackForce, ForceMode.Impulse); //增加彈回力度
-        isKnockBack = true; //正在彈回
-        knockBackKeeper = KnockDackDuration; //重設彈回時間，並到upate減少至0
+        // 增加向上的力，創造拋物線效果
+        KnockBackDirection.y += 0.5f; // 調整這個值來改變拋物線的高度
+
+        KnockBackDirection = KnockBackDirection.normalized; // 正規化
+
+        rb.AddForce(KnockBackDirection * KnockBackForce, ForceMode.Impulse); // 增加彈回力度
+        isKnockBack = true; // 正在彈回
+        knockBackKeeper = KnockDackDuration; // 重設彈回時間，並在 Update 減少至 0
     }
 
     void DrawColor()
@@ -377,14 +472,38 @@ public class Player : MonoBehaviour
 
     void ChangeMaterial(int num)
     {
-        rend[0].material = matSuger[num]; //1
+        if (rend != null)
+        {
+            // 將修改後的材質陣列重新賦值給 SkinnedMeshRenderer
+            for (int i = 0; i < rend.Length; i++)
+            {
+                // 複製現有的材質陣列
+                Material[] mats = rend[i].materials;
+
+                //修改
+                if (mats.Length > 0)
+                {
+                    if (i != 0 && i != 3 && i != 7)
+                    {
+                        mats[0] = matBody[num];
+                    }
+                    else
+                    {
+                        mats[0] = matSuger[num];
+                    }
+                }
+
+                rend[i].materials = mats;
+            }
+        }
+        /*rend[0].material = matSuger[num]; //1
         rend[1].material = matBody[num];
         rend[2].material = matBody[num];
         rend[3].material = matSuger[num]; //4
         rend[4].material = matBody[num];
         rend[5].material = matBody[num];
         rend[6].material = matBody[num];
-        rend[7].material = matSuger[num]; //8
+        rend[7].material = matSuger[num]; //8*/
     }
 
     bool Checkcolor()

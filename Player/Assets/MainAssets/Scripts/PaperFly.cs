@@ -81,7 +81,7 @@ public class PaperFly : MonoBehaviour
         {
             if (paperData.paper.GroupName == groupName)
             {
-                Debug.Log(groupName);
+                //Debug.Log(groupName);
                 objectsWithGroupName.Add(paperData.gameObject);
             }
         }

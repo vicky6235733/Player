@@ -7,13 +7,15 @@ using UnityEngine;
 public class BigSandFrog : MonoBehaviour
 {
     int[] PaperLines = { 18, 17, 16, 15, 14, 19, 27, 23, 24, 20, 26, 28, 3, 2, 7, 1, 8, 9, 12, 13 }; //撕貼紙順序
+
     public Transform[] StickeTransforms = new Transform[20];
     public FrogDataStruct[,] FrogList; //二維陣列
     int road;
     public GameObject[] Frogs = new GameObject[9];
+    public GameObject ParentFrog;
     int[] cnt = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    int i = -1; //控制協程i
-    PaperFly call; //紙消失腳本
+    bool StartCheck; //開始撕貼紙
+
     Animator anim;
 
     void Awake()
@@ -26,9 +28,9 @@ public class BigSandFrog : MonoBehaviour
 
     void Start()
     {
-        call = FindObjectsOfType<PaperFly>().FirstOrDefault();
+        StartCheck = false;
         //初始化陣列
-        FrogList = new FrogDataStruct[PaperLines.Length, 3];
+        FrogList = new FrogDataStruct[PaperLines.Length, 2];
 
         for (int n = 0; n < FrogList.GetLength(0); n++)
         {
@@ -59,47 +61,30 @@ public class BigSandFrog : MonoBehaviour
                 }
             }
         }
+        for (int i = 0; i < StickeTransforms.Length; i++)
+        {
+            StickeTransforms[i] = FindObjectsOfType<PaperData>()
+                .Select(PaperData => PaperData.paper.transform)
+                .FirstOrDefault();
+        }
+        StartCoroutine(StartAction());
     }
 
     void Update()
     {
-        if (i == -1)
+        if (StartCheck)
         {
-            i++;
-            StartCoroutine(CheckFrogState());
-        }
-        //StartCoroutine(StayInLines());
-    }
-
-    IEnumerator StayInLines() //每三秒撕一次貼紙
-    {
-        for (int i = 0; i < FrogList.GetLength(0); i++)
-        {
-            for (int j = 0; j < FrogList.GetLength(1); j++)
-            {
-                if (FrogList[i, j].isInLine == true) //如果struct不為空值
-                {
-                    FrogList[i, j].State = 1;
-                }
-
-                yield return new WaitForSeconds(3f);
-            }
+            StartCheck = false;
+            //StartCoroutine(ChangeState());
         }
     }
 
-    IEnumerator CheckFrogState() //定時開啟青蛙跳直到所有青蛙都在跳
+    IEnumerator StartAction() //定時開啟青蛙跳直到所有青蛙都在跳
     {
-        while (true)
+        int i = 0;
+        while (true) //開頭讓青蛙輪流跳一次
         {
-            if (Frogs[i].GetComponent<FrogData>().frog.isJumping == false) //回到原點才判斷狀態
-            {
-                FrogMovitation(i);
-            }
-            else
-            {
-                yield return null; // 讓協程暫停一個幀，避免無限迴圈
-                continue;
-            }
+            NPCJump(i);
 
             if (i < 8)
             {
@@ -107,29 +92,98 @@ public class BigSandFrog : MonoBehaviour
             }
             else
             {
-                i = -1;
-                yield break;
+                StartCheck = true;
+                yield return null;
+                break;
             }
 
-            yield return new WaitForSeconds(.4f);
+            yield return new WaitForSeconds(.3f);
         }
+        yield break;
     }
 
-    void FrogMovitation(int num) //決定狀態
+    IEnumerator ChangeState()
     {
-        switch (Frogs[num].GetComponent<FrogData>().frog.State)
+        for (int i = 0; i < FrogList.GetLength(0); i++) //開始撕貼紙
         {
-            case 1:
-                StickerJump(num);
-                break;
-            case 2:
-                NPCJump(num);
-                break;
-
-            default:
-                NPCJump(num);
-                break;
+            int[] num = new int[FrogList.GetLength(0)];
+            for (int j = 0; j < FrogList.GetLength(1); j++)
+            {
+                if (FrogList[i, j].isInLine == true) //如果struct不為空值
+                {
+                    FrogList[i, j].State = 1; //更換狀態
+                    num[j] = FindObjectsOfType<FrogData>()
+                        .Where(FrogData => FrogData.frog.Number == FrogList[i, j].Number)
+                        .Select(FrogData => FrogData.frog.Number)
+                        .FirstOrDefault();
+                    num[j]--; //青蛙編號從1開始，物件陣列從0開始
+                    if (FrogList.GetLength(i) > 1) //如果有多隻青蛙負責同一張貼紙
+                    {
+                        if (j + 1 == FrogList.GetLength(j)) //如果已經到所有青蛙結尾
+                        {
+                            //一張貼紙的所有青蛙結束state更改
+                            yield return StartCoroutine(CheckFrogState(num, i));
+                        }
+                        else
+                        {
+                            //先等全部都變state=1再疊青蛙
+                            yield return null;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        yield return StartCoroutine(CheckFrogState(num, i)); //呼叫該編號青蛙，等待他跳完才能繼續下一隻
+                    }
+                }
+            }
         }
+        yield break;
+    }
+
+    IEnumerator CheckFrogState(int[] num, int currentPaper) //確認青蛙是否回到原點
+    {
+        if (num.Length <= 1) //只有一隻青蛙
+        {
+            while (true) //如果開頭跳完已經輪到青蛙撕貼紙，但青蛙還沒跳完，就等他isJumping回到原點才判斷狀態
+            {
+                if (Frogs[num[0]].GetComponent<FrogData>().frog.isJumping == false) //回到原點才判斷狀態
+                {
+                    StickerJump(num[0], currentPaper);
+                    yield return null;
+                    break;
+                }
+                else
+                {
+                    yield return null;
+                }
+            }
+        }
+        else
+        { //有多隻青蛙
+            while (true)
+            {
+                int cnt = 0;
+                foreach (var n in num)
+                {
+                    if (Frogs[n].GetComponent<FrogData>().frog.isJumping == false)
+                    {
+                        cnt++;
+                    }
+                }
+                if (cnt == num.Length)
+                {
+                    StartCoroutine(DoubleFrogStickerJump(num, currentPaper));
+                    yield return null;
+                    break;
+                }
+                else
+                {
+                    yield return null;
+                }
+            }
+        }
+        yield break;
     }
 
     void NPCJump(int num) //青蛙預設兩條路
@@ -143,11 +197,11 @@ public class BigSandFrog : MonoBehaviour
 
         if (road == 0)
         {
-            StartCoroutine(JumpToTarget(currentFrogData.TargetLine, currentFrog, 0));
+            StartCoroutine(JumpForoRoad(currentFrogData.TargetLine, currentFrog, 0));
         }
         if (road == 1)
         {
-            StartCoroutine(JumpToTarget(currentFrogData.TargetLine02, currentFrog, 0));
+            StartCoroutine(JumpForoRoad(currentFrogData.TargetLine02, currentFrog, 0));
         }
 
         if (cnt[num] >= 4)
@@ -160,59 +214,213 @@ public class BigSandFrog : MonoBehaviour
         }
     }
 
-    IEnumerator StickerJump(int num) //用貼紙編號決定青蛙
+    IEnumerator StickerJump(int num, int currentPaperNum) //用貼紙編號決定青蛙
     {
         GameObject currentFrog = Frogs[num];
-        yield break;
+        currentFrog.GetComponent<FrogData>().frog.isJumping = true;
+        yield return StartCoroutine(
+            JumpToTarget(
+                currentFrog,
+                currentFrog.transform.position,
+                StickeTransforms[currentPaperNum].position
+            )
+        ); //跳過去貼紙
+        yield return new WaitForSeconds(2f);
+        yield return StartCoroutine(
+            JumpToTarget(
+                currentFrog,
+                StickeTransforms[currentPaperNum].position,
+                currentFrog.transform.position
+            )
+        ); //跳回來
+        currentFrog.GetComponent<FrogData>().frog.isJumping = false;
     }
 
-    IEnumerator JumpToTarget(Transform[] Point, GameObject frog, int current) //路線，青蛙，青蛙目前站點
+    IEnumerator DoubleFrogStickerJump(int[] num, int currentPaperNum)
+    {
+        GameObject currentFrog = Frogs[num[0]];
+        GameObject currentFrog02 = Frogs[num[1]];
+        int BottomFrogNum =
+            Vector3.Distance(
+                currentFrog.transform.position,
+                StickeTransforms[currentPaperNum].position
+            )
+            < Vector3.Distance(
+                currentFrog02.transform.position,
+                StickeTransforms[currentPaperNum].position
+            )
+                ? 0
+                : 1; //決定哪隻青蛙在下面(距離較遠的跳到距離較近的，再一起撕貼紙)
+        currentFrog.GetComponent<FrogData>().frog.isJumping = true;
+        currentFrog02.GetComponent<FrogData>().frog.isJumping = true;
+
+        if (BottomFrogNum == 0)
+        { //0 is bottom
+            yield return StartCoroutine(
+                JumpToTarget(
+                    currentFrog02,
+                    currentFrog02.transform.position,
+                    currentFrog.transform.position
+                )
+            );
+            currentFrog02.transform.SetParent(currentFrog.transform);
+            yield return StartCoroutine(
+                JumpToTarget(
+                    currentFrog,
+                    currentFrog.transform.position,
+                    StickeTransforms[currentPaperNum].position
+                )
+            ); //跳過去貼紙
+            yield return new WaitForSeconds(2f);
+            yield return StartCoroutine(
+                JumpToTarget(
+                    currentFrog,
+                    StickeTransforms[currentPaperNum].position,
+                    currentFrog.transform.position
+                )
+            ); //跳回來
+            currentFrog02.transform.SetParent(ParentFrog.transform);
+        }
+        else if (BottomFrogNum == 1)
+        { //1 is bottom
+            yield return StartCoroutine(
+                JumpToTarget(
+                    currentFrog,
+                    currentFrog.transform.position,
+                    currentFrog02.transform.position
+                )
+            );
+            currentFrog.transform.SetParent(currentFrog02.transform);
+            yield return StartCoroutine(
+                JumpToTarget(
+                    currentFrog02,
+                    currentFrog02.transform.position,
+                    StickeTransforms[currentPaperNum].position
+                )
+            ); //跳過去貼紙
+            yield return new WaitForSeconds(2f);
+            yield return StartCoroutine(
+                JumpToTarget(
+                    currentFrog02,
+                    StickeTransforms[currentPaperNum].position,
+                    currentFrog02.transform.position
+                )
+            ); //跳回來
+            currentFrog.transform.SetParent(ParentFrog.transform);
+        }
+        currentFrog.GetComponent<FrogData>().frog.isJumping = false;
+        currentFrog02.GetComponent<FrogData>().frog.isJumping = false;
+    }
+
+    IEnumerator JumpForoRoad(Transform[] Point, GameObject frog, int current)
     {
         anim = frog.GetComponent<Animator>();
-        anim.SetBool("FrogJump", true);
 
-        //狀態設定
-        float MoveSpeed = 4f; //移動速度
+        // 狀態設定
+        float MoveSpeed = 4f; // 移動速度
         float JumpHeight = 1.5f;
         int totalPoints = Point.Length; // 獲取點的總數
-        Vector3 StartPosition = Point[current].position; //在一次跳躍中的起點
-        Vector3 TargetPosition;
-        if (current < 3)
-        {
-            TargetPosition = Point[current + 1].position; //在一次跳躍中的終點
-        }
-        else
-        {
-            TargetPosition = Point[0].position; //在一次跳躍中的終點
-        }
-        frog.GetComponent<FrogData>().frog.isJumping = true;
 
-        //旋轉處理
+        while (true)
+        {
+            // 設置起點和終點
+            Vector3 StartPosition = Point[current].position; // 在一次跳躍中的起點
+            Vector3 TargetPosition = Point[(current + 1) % totalPoints].position; // 在一次跳躍中的終點
+
+            frog.GetComponent<FrogData>().frog.isJumping = true;
+
+            // 旋轉處理
+            Vector3 directionToTarget = (TargetPosition - StartPosition).normalized;
+            Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
+            float rotationSpeed = 200f; // 調整旋轉速度
+
+            float MoveDistance = Vector3.Distance(StartPosition, TargetPosition); // 距離長度
+            float JumpDuration = MoveDistance / MoveSpeed; // 移動時間
+            float now = 0;
+            
+            
+            anim.SetBool("FrogJump",true);
+            // 跳躍處理
+            while (now < JumpDuration)
+            {
+                now += Time.deltaTime;
+                float t = now / JumpDuration; // 當前時間段數值
+
+                // 處理旋轉
+                frog.transform.rotation = Quaternion.RotateTowards(
+                    frog.transform.rotation,
+                    lookRotation,
+                    rotationSpeed * Time.deltaTime
+                );
+                frog.transform.eulerAngles = new Vector3(0, frog.transform.eulerAngles.y, 0); // 校正XZ旋轉
+
+                // 改變曲線使起跳快而下降慢
+                float curvedT = Mathf.Sin(t * Mathf.PI * 0.5f); // 起跳快，下降慢
+                float CurrentHeight = Mathf.Sin(t * Mathf.PI) * JumpHeight; // 拋物線高度
+
+                
+                // 更新位置
+                frog.transform.position =
+                    Vector3.Lerp(StartPosition, TargetPosition, curvedT)
+                    + new Vector3(0, CurrentHeight, 0);
+
+                yield return null;
+            }
+
+            // 設置目標位置
+            frog.transform.position = TargetPosition;
+            
+            yield return new WaitForSeconds(2f); // 跳躍之間的等待時間
+            anim.SetBool("FrogJump",false);
+            // 更換目標點
+            current = (current + 1) % totalPoints;
+
+            // 停止條件
+            if (current == 0)
+            {
+                frog.GetComponent<FrogData>().frog.isJumping = false;
+
+                yield break; // 跳出循環結束協程
+            }
+        }
+    }
+
+    IEnumerator JumpToTarget(GameObject frog, Vector3 StartPosition, Vector3 TargetPosition)
+    {
+        anim = frog.GetComponent<Animator>();
+
+        // 狀態設定
+        float MoveSpeed = 4f; // 移動速度
+        float JumpHeight = 1.5f;
+
         Vector3 directionToTarget = (TargetPosition - StartPosition).normalized;
         Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
-        float rotationSpeed = 200f; // 調整速度
+        float rotationSpeed = 200f; // 調整旋轉速度
 
-        float MoveDistance = Vector3.Distance(StartPosition, TargetPosition); //距離長度
+        float MoveDistance = Vector3.Distance(frog.transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
         float now = 0;
 
-        //跳躍處理
         while (now < JumpDuration)
         {
             now += Time.deltaTime;
             float t = now / JumpDuration; //當前時間段數值
 
+            // 處理旋轉
             frog.transform.rotation = Quaternion.RotateTowards(
                 frog.transform.rotation,
                 lookRotation,
                 rotationSpeed * Time.deltaTime
             );
-            frog.transform.eulerAngles = new Vector3(0, frog.transform.eulerAngles.y, 0); //校正XZ旋轉
+            frog.transform.eulerAngles = new Vector3(0, frog.transform.eulerAngles.y, 0); // 校正XZ旋轉
 
             // 改變曲線使起跳快而下降慢
             float curvedT = Mathf.Sin(t * Mathf.PI * 0.5f); // 起跳快，下降慢
             float CurrentHeight = Mathf.Sin(t * Mathf.PI) * JumpHeight; // 拋物線高度
 
+            anim.SetTrigger("BFrogJump");
+
+            // 更新位置
             frog.transform.position =
                 Vector3.Lerp(StartPosition, TargetPosition, curvedT)
                 + new Vector3(0, CurrentHeight, 0);
@@ -220,21 +428,6 @@ public class BigSandFrog : MonoBehaviour
             yield return null;
         }
         frog.transform.position = TargetPosition;
-        frog.GetComponent<FrogData>().frog.current = TargetPosition;
-
-        yield return new WaitForSeconds(2f);
-        anim.SetBool("FrogJump", false);
-
-        //更換目標
-
-        current = (current + 1) % totalPoints; // 循環到下一點
-        /*if (current == 0)
-        { //跳過一輪就停止然後跳出
-            frog.GetComponent<FrogData>().frog.isJumping = false;
-            yield break;
-        }*/
-        StartCoroutine(JumpToTarget(Point, frog, current)); //重複呼叫直到跳完一輪
+        yield break;
     }
-
-    
 }

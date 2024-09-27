@@ -396,6 +396,7 @@
 "Assets/Editor/BatchAddComponent.cs"
 "Assets/Editor/BatchAssignMaterial.cs"
 "Assets/Editor/BatchUnpackPrefab.cs"
+"Assets/Editor/LayerAssigner.cs"
 "Assets/Editor/MeshRendererInspector.cs"
 "Assets/Editor/NonInportMaterialFBX.cs"
 "Assets/Editor/PositionSaver.cs"

@@ -11,8 +11,9 @@ public struct PaperItemStruct
     public int ID; //編號
     public string GroupName; //群組名稱
     public Renderer _ren;
+    public Transform transform;
 
-    public PaperItemStruct(string pt, string color, int id, string gn, GameObject gm, Renderer re)
+    public PaperItemStruct(string pt, string color, int id, string gn, GameObject gm, Renderer re,Transform tf)
     {
         this.PatternType = pt;
         this.Color = color;
@@ -21,6 +22,7 @@ public struct PaperItemStruct
         this.ID = id;
         this.GroupName = gn;
         this._ren = re;
+        this.transform = tf;
     }
 }
 
@@ -38,7 +40,7 @@ public class PaperData : MonoBehaviour
         if (pt != null && color != null && _id != 0)
         {
             _group = _group != null ? _group : "null";
-            paper = new PaperItemStruct(pt,color,_id,_group,this.gameObject, this.gameObject.GetComponent<Renderer>());
+            paper = new PaperItemStruct(pt,color,_id,_group,this.gameObject, this.gameObject.GetComponent<Renderer>(),this.gameObject.transform);
         }
     }
 }

@@ -6,16 +6,13 @@ using UnityEngine;
 public class Frog : MonoBehaviour
 {
     //
-    FrogDataStruct frogStruct;
-    PaperItemStruct paperStruct;
-    ColorPapaerStruct colorStruct;
-    GameObject CurrentTarget;
+    FrogData frogStruct;
 
     //
     Animator anim;
     public Transform[] Point; //初始位置
-    Vector3 StartPoint; //起點
-    Vector3 EndPoint; //終點
+    public Vector3 StartPoint; //起點
+    public Vector3 EndPoint; //終點
     float MoveSpeed;
     float JumpHeight;
 
@@ -23,7 +20,6 @@ public class Frog : MonoBehaviour
     Vector3 TargetPosition; //當前目標
     bool isMovingFrog;
     bool isMovedToEnd;
-    
 
     //
     //CameraShake CameraShake; //鏡頭抖動腳本
@@ -31,7 +27,7 @@ public class Frog : MonoBehaviour
 
     void Start()
     {
-        frogStruct = this.gameObject.GetComponent<FrogData>().frog;
+        frogStruct = this.gameObject.GetComponent<FrogData>();
         //
         if (Point != null)
         {
@@ -46,7 +42,7 @@ public class Frog : MonoBehaviour
         JumpHeight = 1.5f;
         isMovingFrog = false;
         isMovedToEnd = false;
-        
+
         //
         anim = GetComponent<Animator>();
         //CameraShake = Camera.main.GetComponent<CameraShake>();
@@ -71,22 +67,28 @@ public class Frog : MonoBehaviour
     {
         isMovingFrog = true;
         FrogTargetCounting();
+        CheckColorPaper();
         StartCoroutine(JumpToTarget());
     }
 
-    void FrogTargetCounting()
+    void FrogTargetCounting() //小青蛙偵測是否填色
     {
-        if (paperStruct.PatternType != null)
+        if (frogStruct.paperStruct.PatternType != null) //如果有踩過目標，就分配目標顏色然後交給小青蛙偵測
         {
-            colorStruct = FindObjectsOfType<ColorData>()
+            frogStruct.colorStruct = FindObjectsOfType<ColorData>()
                 .Where(ColorData =>
-                    ColorData.colorPaper.PatternType != null
-                    && ColorData.colorPaper.PatternType == paperStruct.PatternType
+                    ColorData.colorPaper.PatternType == frogStruct.paperStruct.PatternType
                 )
                 .Select(ColorData => ColorData.colorPaper)
                 .FirstOrDefault();
+        }
+    }
 
-            if (colorStruct.Activity == true)
+    void CheckColorPaper() //每次移動前偵測是否改目標
+    {
+        if (frogStruct.colorStruct.Color != null)
+        {
+            if (frogStruct.colorStruct.Activity == true)
             {
                 if (transform.position == StartPoint)
                 {
@@ -102,11 +104,10 @@ public class Frog : MonoBehaviour
         Vector3 StartPosition = transform.position; //在一次跳躍中的起點
         TargetPosition = isMovedToEnd ? StartPoint : EndPoint; //在一次跳躍中的終點
 
-   
         Vector3 directionToTarget = (TargetPosition - StartPosition).normalized;
         Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, 1f); // 立即朝向目標
-        transform.eulerAngles = new Vector3(0, transform.eulerAngles.y, 0);//校正XZ旋轉
+        transform.eulerAngles = new Vector3(0, transform.eulerAngles.y, 0); //校正XZ旋轉
 
         float MoveDistance = Vector3.Distance(transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
@@ -139,28 +140,5 @@ public class Frog : MonoBehaviour
         //交換起點終點位置 狀態
         isMovedToEnd = !isMovedToEnd;
         isMovingFrog = false;
-     
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject != null && other.gameObject.tag == "Paper")
-        {
-            CurrentTarget = other.gameObject;
-            paperStruct = CurrentTarget.GetComponent<PaperData>().paper;
-            string paperColor = CurrentTarget.GetComponent<PaperData>().paper.Color;
-
-            if (frogStruct.Color == paperColor)//青蛙和貼紙顏色匹配
-            {
-                Invoke("WaitedForCall", 1f);
-                
-            }
-        }
-    }
-
-    void WaitedForCall()
-    {
-        call.callDisappear(CurrentTarget);
-        CurrentTarget.GetComponent<PaperData>().paper.State = true;
     }
 }
