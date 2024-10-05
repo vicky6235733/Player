@@ -8,6 +8,7 @@ TagManager:
   - Paper
   - trigger
   - Frog
+  - BigFrog
   layers:
   - Default
   - TransparentFX

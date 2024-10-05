@@ -40,7 +40,7 @@ public struct FrogDataStruct
     )
     {
         this.Number = num;
-        this.State = 1; //1:Sticker or 2:NPC
+        this.State = 2; //1:Sticker or 2:NPC
         this.Color = color;
         this.TargetLine = point;
         this.TargetLine02 = point02;
@@ -86,6 +86,7 @@ public class FrogData : MonoBehaviour
 
     void OnTriggerEnter(Collider other) //偵測到匹配對象並讓貼紙call消失
     {
+        Invoke("StopDrift", 0.5f);
         if (isSmallFrog) //小青蛙
         {
             if (other.gameObject.tag == "Paper")
@@ -121,5 +122,8 @@ public class FrogData : MonoBehaviour
     {
         call.callDisappear(CurrentTarget);
         CurrentTarget.GetComponent<PaperData>().paper.State = true; //表示貼紙飄起
+    }
+    void StopDrift(){
+        this.GetComponent<Rigidbody>().velocity = Vector3.zero;
     }
 }

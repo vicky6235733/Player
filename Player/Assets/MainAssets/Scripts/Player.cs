@@ -63,7 +63,7 @@ public class Player : MonoBehaviour
     string[] AllColor = { "null", "red", "yellow", "blue", "green", "orange", "purple" };
 
     //
-
+    int ColorCnt;
 
     void Start()
     {
@@ -99,7 +99,7 @@ public class Player : MonoBehaviour
         MoveAmount = Vector3.zero;
         //
         knockBackAngle = 180f;
-        KnockBackForce = 120f;
+        KnockBackForce = 180f;
         KnockDackDuration = 0.5f;
         knockBackKeeper = 0;
         //
@@ -113,10 +113,15 @@ public class Player : MonoBehaviour
 
         //
         SpintAnimationRestart = true;
+        ColorCnt = 0;
     }
 
     //爬牆實裝
     //前方有障礙物的時候不能衝刺未完全實踐功能
+    //knockback判定要改，他現在會常常被彈回，也會影響到衝刺速度?有時候測又沒用
+    //bounce判定未完成
+    //掉落到時候改死亡
+    //transform.rotation = Quaternion.LookRotation(MoveDirection.normalized);優化
 
     //有時候跳躍動畫會播放但是他不會跳
     //撞牆硬要往前衝的時候跳不起來
@@ -140,6 +145,7 @@ public class Player : MonoBehaviour
         Vector3 RotateAmount = hor * Vector3.up * RotateSpeed * Time.deltaTime;
         Quaternion deltaRotation = Quaternion.Euler(RotateAmount);
         rb.MoveRotation(rb.rotation * deltaRotation);
+        
         if (hor != 0 && !isGettingRotation)
         {
             lastRotation = transform.rotation;
@@ -166,7 +172,7 @@ public class Player : MonoBehaviour
         ); //射線偵測下方有沒有地板
 
         GameObject item = isOnFloor && hitFloor.collider ? hitFloor.collider.gameObject : null;
-        if ( item != null && item.transform.childCount > 0)
+        if (item != null && item.transform.childCount > 0)
         {
             foreach (Transform child in item.transform)
             {
@@ -181,7 +187,9 @@ public class Player : MonoBehaviour
                     isOnFloor = false;
                 }
             }
-        }else{
+        }
+        else
+        {
             isOnFloor = false;
         }
 
@@ -189,7 +197,7 @@ public class Player : MonoBehaviour
         {
             Sloping = true;
         }
-        
+
         if (
             isOnFloor
             && Input.GetKeyDown(KeyCode.Space)
@@ -198,21 +206,20 @@ public class Player : MonoBehaviour
         {
             Jump();
         }
-        
 
         //防止穿到地板下
         if (!isOnFloor && Mathf.Abs(transform.position.y - hitFloor.point.y) < 0.2f)
         {
             transform.position = new Vector3(
-                transform.position.x - 1f,
+                transform.position.x - 5f,
                 transform.position.y + 10f,
-                transform.position.z - 1f
+                transform.position.z - 5f
             );
             rb.velocity = Vector3.zero;
         }
 
         //sprint
-        if (Input.GetKeyDown(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.R) && !isSlowDown)
         {
             isSprinting = true; //如果按R就判斷衝刺
             if (SpintAnimationRestart)
@@ -291,7 +298,7 @@ public class Player : MonoBehaviour
             CollisionLayer
         ); //射線偵測前方有沒有物體
         GameObject wall = isSlowDown && hitWall.collider ? hitWall.collider.gameObject : null;
-        if ( wall != null && wall.transform.childCount > 0)
+        if (wall != null && wall.transform.childCount > 0)
         {
             foreach (Transform child in wall.transform)
             {
@@ -299,6 +306,7 @@ public class Player : MonoBehaviour
                 if (child.gameObject.layer == LayerMask.NameToLayer("Collision"))
                 {
                     isSlowDown = true;
+
                     break;
                 }
                 else
@@ -306,10 +314,19 @@ public class Player : MonoBehaviour
                     isSlowDown = false;
                 }
             }
-        }else{
+        }
+        else
+        {
             isSlowDown = false;
         }
-        
+        if (MoveDirection.magnitude > 0.1f && isSlowDown)
+        {
+            anim.SetBool("Bounce", true);
+        }
+        else
+        {
+            anim.SetBool("Bounce", false);
+        }
 
         //knockback(如果正在彈回，就倒數時間然後停止)
         if (isKnockBack)
@@ -338,8 +355,11 @@ public class Player : MonoBehaviour
             }
             else
             { //sprint(單純衝刺)
-                MoveDirection = transform.forward;
-                MoveAmount = MoveDirection * Speed * Time.fixedDeltaTime;
+                if (!isSlowDown)
+                { //前方有物體就不給他硬衝
+                    MoveDirection = transform.forward;
+                    MoveAmount = MoveDirection * Speed * Time.fixedDeltaTime;
+                }
             }
         }
 
@@ -418,7 +438,7 @@ public class Player : MonoBehaviour
                 // 這裡你可以判斷子物件的Layer是否符合條件
                 if (child.gameObject.layer == LayerMask.NameToLayer("Collision"))
                 {
-                    MoveAmount = Vector3.zero; //停止移動
+                    //MoveAmount = Vector3.zero; //停止移動
                     if (rb.velocity.magnitude > 0.1f)
                     {
                         rb.AddForce(-rb.velocity.normalized); //給予反向力讓玩家停止
@@ -428,6 +448,7 @@ public class Player : MonoBehaviour
                         rb.velocity = Vector3.zero;
                     }
                     ColliderEntered = true;
+
                     KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
                 }
             }
@@ -435,12 +456,72 @@ public class Player : MonoBehaviour
 
         if (other.gameObject.tag == "Frog")
         {
+            ColorCnt++;
             ColliderEntered = true;
             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
-            ChangeMaterial(
-                Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color)
-            );
-            ColorName = other.gameObject.GetComponent<FrogData>().frog.Color;
+            if (ColorCnt == 1)
+            {
+                ChangeMaterial(
+                    Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color)
+                );
+                ColorName = other.gameObject.GetComponent<FrogData>().frog.Color;
+            }
+            else if (ColorCnt == 2)
+            {
+                if (ColorName == other.gameObject.GetComponent<FrogData>().frog.Color)
+                {
+                    ColorCnt = 1;
+                }
+                else
+                {
+                    if (ColorName == "red")
+                    {
+                        if (other.gameObject.GetComponent<FrogData>().frog.Color == "yellow")
+                        {
+                            ColorName = "orange";
+                        }
+                        else if (other.gameObject.GetComponent<FrogData>().frog.Color == "blue")
+                        {
+                            ColorName = "purple";
+                        }
+                    }
+                    if (ColorName == "yellow")
+                    {
+                        if (other.gameObject.GetComponent<FrogData>().frog.Color == "red")
+                        {
+                            ColorName = "orange";
+                        }
+                        else if (other.gameObject.GetComponent<FrogData>().frog.Color == "blue")
+                        {
+                            ColorName = "green";
+                        }
+                    }
+                    if (ColorName == "blue")
+                    {
+                        if (other.gameObject.GetComponent<FrogData>().frog.Color == "red")
+                        {
+                            ColorName = "purple";
+                        }
+                        else if (other.gameObject.GetComponent<FrogData>().frog.Color == "yellow")
+                        {
+                            ColorName = "green";
+                        }
+                    }
+                    ChangeMaterial(Array.IndexOf(AllColor, ColorName));
+                }
+            }
+            else
+            {
+                Debug.Log("Color Reset time");
+            }
+        }
+        if (other.gameObject.tag == "BigFrog")
+        {
+            ColliderEntered = true;
+            KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
+            ChangeMaterial(0);
+            ColorName = "original";
+            ColorCnt = 0;
         }
     }
 
