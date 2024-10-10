@@ -24,14 +24,20 @@ public class PaperFly : MonoBehaviour
         ItemStruct = _pd.paper;
         string _group = ItemStruct.GroupName;
         //
-        List<GameObject> GroupPaper = GetObjectsWithGroupName(_group); //作用物件
-
-        //遍歷相同組的貼紙
-        foreach (GameObject i in GroupPaper)
+        if (_group != "")
         {
-            ren = i.GetComponent<Renderer>();
-            
-            StartCoroutine(FadeOut(i, ren, ren.material.color));
+            List<GameObject> GroupPaper = GetObjectsWithGroupName(_group); //作用物件
+
+            //遍歷相同組的貼紙
+            foreach (GameObject i in GroupPaper)
+            {
+                ren = i.GetComponent<Renderer>();
+
+                StartCoroutine(FadeOut(i, ren, ren.material.color));
+            }
+        }else{
+            ren = item.GetComponent<Renderer>();
+            StartCoroutine(FadeOut(item, ren, ren.material.color));
         }
     }
 
@@ -48,7 +54,7 @@ public class PaperFly : MonoBehaviour
                 float lerp = Mathf.Clamp01(elapsedTime / FadeDuration);
                 Color newColor = initialColor;
                 newColor.a = Mathf.Lerp(color.a, 0, lerp); // 渐变到完全透明
-              
+
                 re.GetPropertyBlock(materialPropertyBlock);
                 materialPropertyBlock.SetColor("_BaseColor", newColor);
                 re.SetPropertyBlock(materialPropertyBlock);
@@ -65,7 +71,7 @@ public class PaperFly : MonoBehaviour
         if (re != null && elapsedTime >= FadeDuration)
         {
             item.SetActive(false);
-            
+
             yield break;
         }
     }
@@ -81,7 +87,6 @@ public class PaperFly : MonoBehaviour
         {
             if (paperData.paper.GroupName == groupName)
             {
-                //Debug.Log(groupName);
                 objectsWithGroupName.Add(paperData.gameObject);
             }
         }

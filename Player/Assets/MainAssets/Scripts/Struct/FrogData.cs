@@ -14,6 +14,7 @@ public struct FrogDataStruct
     public bool isJumping; //是否跳回起點
     public bool isInLine;
     public bool SmallFrog;
+    public int CurrentTargetPaper; //目前目標貼紙
 
     public FrogDataStruct(bool b)
     {
@@ -28,6 +29,7 @@ public struct FrogDataStruct
         this.isInLine = false;
         this.isJumping = false;
         this.SmallFrog = false;
+        this.CurrentTargetPaper = -1;
     }
 
     public FrogDataStruct(
@@ -49,6 +51,7 @@ public struct FrogDataStruct
         this.isInLine = true;
         this.isJumping = false;
         this.SmallFrog = small;
+        CurrentTargetPaper = -1;
     }
 }
 
@@ -68,11 +71,12 @@ public class FrogData : MonoBehaviour
     public PaperItemStruct paperStruct;
     public ColorPapaerStruct colorStruct;
     PaperFly call; //紙消失腳本
+    public bool isStateLocked = false;
+    //
+    Rigidbody rb;
 
     void Awake()
     {
-        
-
         if (Number != 0 && Color != null)
         {
             frog = new FrogDataStruct(Number, _point, _point02, Color, targetPaper, isSmallFrog);
@@ -81,12 +85,18 @@ public class FrogData : MonoBehaviour
 
     void Start()
     {
+        rb = GetComponent<Rigidbody>();
         call = FindObjectsOfType<PaperFly>().FirstOrDefault();
+    }
+
+    void FixedUpdate()
+    {
+        // 每幀施加重力
+        rb.velocity += Vector3.down * 9.8f * Time.fixedDeltaTime;
     }
 
     void OnTriggerEnter(Collider other) //偵測到匹配對象並讓貼紙call消失
     {
-        Invoke("StopDrift", 0.5f);
         if (isSmallFrog) //小青蛙
         {
             if (other.gameObject.tag == "Paper")
@@ -101,21 +111,28 @@ public class FrogData : MonoBehaviour
                 }
             }
         }
-        else
+        else if (isStateLocked)
         { //大青蛙
-            if (other.gameObject.tag == "Paper" && frog.State == 1)
+            if (other.gameObject.tag == "Paper")
             {
-                //if(是目標順序的貼紙)
-                CurrentTarget = other.gameObject;
-                paperStruct = CurrentTarget.GetComponent<PaperData>().paper;
-                string paperColor = CurrentTarget.GetComponent<PaperData>().paper.Color;
-
-                if (frog.Color == paperColor) //青蛙和貼紙顏色匹配
+                PaperData? isPaper = other.gameObject.GetComponent<PaperData>();
+                int PaperID = 0;
+                if (isPaper != null)
                 {
+                    PaperID = isPaper.paper.ID - 30;
+                }
+
+                if (frog.CurrentTargetPaper == PaperID)
+                {
+                    CurrentTarget = other.gameObject;
+
                     Invoke("WaitedForCall", 1f);
+                    isStateLocked = false;
                 }
             }
         }
+        
+        //Invoke("StopDrift", 0.5f);
     }
 
     void WaitedForCall() //呼叫貼紙消失
@@ -123,7 +140,9 @@ public class FrogData : MonoBehaviour
         call.callDisappear(CurrentTarget);
         CurrentTarget.GetComponent<PaperData>().paper.State = true; //表示貼紙飄起
     }
-    void StopDrift(){
+
+    void StopDrift()//取消kinematic用
+    {
         this.GetComponent<Rigidbody>().velocity = Vector3.zero;
     }
 }
