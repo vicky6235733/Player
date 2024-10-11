@@ -7,7 +7,7 @@ public struct PaperItemStruct
     public string PatternType; //形狀
     public string Color; //顏色
     public GameObject Paper; //紙
-    public bool State; //0=未飄起
+    public string State; //0=未飄起
     public int ID; //編號
     public string GroupName; //群組名稱
     public Renderer _ren;
@@ -18,7 +18,7 @@ public struct PaperItemStruct
         this.PatternType = pt;
         this.Color = color;
         this.Paper = gm;
-        this.State = false;
+        this.State = "stay";
         this.ID = id;
         this.GroupName = gn;
         this._ren = re;

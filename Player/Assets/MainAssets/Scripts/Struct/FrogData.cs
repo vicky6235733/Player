@@ -138,7 +138,8 @@ public class FrogData : MonoBehaviour
     void WaitedForCall() //呼叫貼紙消失
     {
         call.callDisappear(CurrentTarget);
-        CurrentTarget.GetComponent<PaperData>().paper.State = true; //表示貼紙飄起
+        CurrentTarget.GetComponent<PaperData>().paper.State = "disappear"; //表示貼紙飄起
+        
     }
 
     void StopDrift()//取消kinematic用

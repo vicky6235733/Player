@@ -19,6 +19,7 @@ public class Player : MonoBehaviour
     float GroundRayLength; //地板射線長度
     RaycastHit hitFloor; //射線偵測到的地板
     RaycastHit hitWall; //射線偵測到的牆壁
+    LayerMask TriggerLayerMask;
 
     LayerMask CollisionLayer; //牆壁圖層
     float CollisionRayLength; //牆壁射線長度
@@ -86,6 +87,7 @@ public class Player : MonoBehaviour
         CollisionLayer = LayerMask.GetMask("Collision");
         CollisionRayLength = 2.5f;
         decelerationFactor = 1f;
+        TriggerLayerMask = LayerMask.GetMask("TriggerLayer");
         //
         MoveSpeed = 3f;
         Speed = MoveSpeed * 2;
@@ -145,7 +147,7 @@ public class Player : MonoBehaviour
         Vector3 RotateAmount = hor * Vector3.up * RotateSpeed * Time.deltaTime;
         Quaternion deltaRotation = Quaternion.Euler(RotateAmount);
         rb.MoveRotation(rb.rotation * deltaRotation);
-        
+
         if (hor != 0 && !isGettingRotation)
         {
             lastRotation = transform.rotation;
@@ -260,18 +262,26 @@ public class Player : MonoBehaviour
             }
         }
 
+        Debug.DrawRay(
+            transform.position + Vector3.up * .5f,
+            Vector3.down * (GroundRayLength + 2f),
+            Color.red
+        );
         //attack
         if (Input.GetKeyDown(KeyCode.E))
         {
             anim.SetBool("Attack", true);
-            Ray ray = new Ray(FloorPosition, Vector3.down);
-            RaycastHit[] hits = Physics.RaycastAll(ray, GroundRayLength);
+            Ray ray = new Ray(transform.position + Vector3.up * .5f, Vector3.down);
+            RaycastHit[] hits = Physics.RaycastAll(ray, GroundRayLength + 1f, TriggerLayerMask);
+
             foreach (RaycastHit hit in hits)
             {
+                Debug.Log(hit.collider.gameObject.name);
                 // 检查射线击中的物体是否具有目标标签
-                if (hit.collider != null && hit.collider.CompareTag("trigger")) //trigger僅限於教學
+                if (hit.collider != null && hit.collider.CompareTag("trigger"))
                 {
                     GameObject TriggerObject = hit.collider.gameObject;
+
                     targetGroup = GetTargetColorPaper<ColorData>(TriggerObject);
                     if (Checkcolor())
                     {
@@ -591,12 +601,29 @@ public class Player : MonoBehaviour
     {
         if (targetGroup != null)
         {
-            if (ColorName == targetGroup[0].GetComponent<ColorData>().colorPaper.Color)
+            int CheckID = targetGroup[0].GetComponent<ColorData>().colorPaper.ID;
+            PaperItemStruct PaperData = FindObjectsOfType<PaperData>()
+                .Where(PaperData => PaperData.paper.ID == CheckID)
+                .Select(PaperData => PaperData.paper)
+                .FirstOrDefault();
+                
+            if (
+                PaperData.State != "stay"
+                && targetGroup[0].GetComponent<ColorData>().colorPaper.Activity == false
+            )
             {
-                return true;
-            }
-            else
-            {
+                if (ColorName == targetGroup[0].GetComponent<ColorData>().colorPaper.Color)
+                {
+                    
+                    targetGroup[0].GetComponent<ColorData>().colorPaper.Activity = true;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }else{
+                Debug.Log("Paper state wrong,or Color paper activity wrong");
                 return false;
             }
         }

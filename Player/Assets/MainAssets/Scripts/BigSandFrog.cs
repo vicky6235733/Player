@@ -7,7 +7,8 @@ using UnityEngine;
 public class BigSandFrog : MonoBehaviour
 {
     int[] PaperLines = { 18, 17, 16, 15, 14, 19, 27, 23, 24, 20, 26, 28, 3, 2, 7, 1, 8, 9, 12, 13 }; //撕貼紙順序
-
+    public AnimationClip clip;
+    float runClipLength; // 獲取 Run 動畫的長度
     public Transform[] StickeTransforms = new Transform[20];
     public FrogDataStruct[,] FrogList; //二維陣列
     int road;
@@ -25,7 +26,7 @@ public class BigSandFrog : MonoBehaviour
             Frogs[i].GetComponent<FrogData>().frog.State = 2; //初始狀態設定不撕貼紙
         }
         //初始化陣列
-        FrogList = new FrogDataStruct[PaperLines.Length, 2]; //new實例不能改到原始數值，沒用的東西，笨笨
+        FrogList = new FrogDataStruct[PaperLines.Length, 2]; //new實例不能改到原始數值，純粹用於順序
         for (int n = 0; n < FrogList.GetLength(0); n++)
         {
             for (int m = 0; m < FrogList.GetLength(1); m++)
@@ -38,6 +39,11 @@ public class BigSandFrog : MonoBehaviour
     void Start()
     {
         StartCheck = true;
+        if (clip != null)
+        {
+            runClipLength = clip.length;
+        }
+
         //找尋有被指派目標的青蛙
         var matchingFrogs = FindObjectsOfType<FrogData>()
             .Where(frogData => frogData.frog.PaperTarget != null)
@@ -105,12 +111,50 @@ public class BigSandFrog : MonoBehaviour
                 break;
             }
 
-            yield return new WaitForSeconds(.8f);
+            yield return new WaitForSeconds(.3f);
         }
         yield break;
     }
 
-    void ChangeToNPC() { }
+    IEnumerator NPCState()
+    {
+        int i = 0;
+        while (true)
+        {
+            StartCoroutine(NPCJump(i));
+            if (i < 8)
+            {
+                i++;
+            }
+            else
+            {
+                i = 0;
+                yield return null;
+                break;
+            }
+            yield return new WaitForSeconds(.3f);
+        }
+        yield break;
+    }
+
+    void ChangeToNPC()
+    {
+        for (int i = 0; i < Frogs.Length; i++)
+        {
+            Frogs[i].GetComponent<FrogData>().frog.State = 2; //NPC狀態
+        }
+        for (int i = 0; i < FrogList.GetLength(0); i++)
+        {
+            for (int j = 0; j < FrogList.GetLength(1); j++)
+            {
+                if (FrogList[i, j].isInLine == true)
+                {
+                    FrogList[i, j].State = 2; //NPC狀態
+                }
+            }
+        }
+        StartCoroutine(NPCState());
+    }
 
     IEnumerator ChangeState()
     {
@@ -121,7 +165,7 @@ public class BigSandFrog : MonoBehaviour
             {
                 if (FrogList[i, j].isInLine == true) //如果struct不為空值
                 {
-                    FrogList[i, j].State = 1; //更換狀態
+                    FrogList[i, j].State = 1; //更換狀態(不會更改到原本的data)
 
                     num.Add(
                         FindObjectsOfType<FrogData>()
@@ -148,7 +192,7 @@ public class BigSandFrog : MonoBehaviour
                     {
                         yield return StartCoroutine(CheckFrogState(num, i)); //呼叫該編號青蛙，等待他跳完才能繼續下一隻
                     }
-                    FrogList[i, j].State = 0; //更換狀態
+                    FrogList[i, j].State = 0; //更換狀態(不會更改到原本的data)
                 }
 
                 num.Clear();
@@ -251,7 +295,7 @@ public class BigSandFrog : MonoBehaviour
                 num
             )
         ); //跳過去貼紙
-        yield return new WaitForSeconds(.8f);
+        yield return new WaitForSeconds(.2f);
         yield return StartCoroutine(
             JumpToTarget(
                 currentFrog,
@@ -308,7 +352,7 @@ public class BigSandFrog : MonoBehaviour
                     num[0]
                 )
             ); //跳過去貼紙
-            yield return new WaitForSeconds(.8f);
+            yield return new WaitForSeconds(.2f);
             yield return StartCoroutine(
                 JumpToTarget(
                     currentFrog,
@@ -339,7 +383,7 @@ public class BigSandFrog : MonoBehaviour
                     num[1]
                 )
             ); //跳過去貼紙
-            yield return new WaitForSeconds(.8f);
+            yield return new WaitForSeconds(.2f);
             yield return StartCoroutine(
                 JumpToTarget(
                     currentFrog02,
@@ -380,10 +424,20 @@ public class BigSandFrog : MonoBehaviour
 
             float MoveDistance = Vector3.Distance(StartPosition, TargetPosition); // 距離長度
             float JumpDuration = MoveDistance / MoveSpeed; // 移動時間
+            if (MoveDistance <= 3)
+            {
+                JumpDuration *= 2f;
+            }
+            if (MoveDistance >= 5)
+            {
+                JumpDuration /= 1.7f;
+            }
+            JumpDuration /= 2f;
             float now = 0;
 
+            anim[num].speed = (runClipLength / JumpDuration) * 1.2f;
             anim[num].SetTrigger("BFrogJump");
-            yield return new WaitForSeconds(0.8f);
+            yield return new WaitForSeconds(0.5f);
             // 跳躍處理
             while (now < JumpDuration)
             {
@@ -413,7 +467,7 @@ public class BigSandFrog : MonoBehaviour
             // 設置目標位置
             frog.transform.position = TargetPosition;
 
-            yield return new WaitForSeconds(.8f); // 跳躍之間的等待時間
+            yield return new WaitForSeconds(.5f); // 跳躍之間的等待時間
 
             // 更換目標點
             current = (current + 1) % totalPoints;
@@ -445,10 +499,20 @@ public class BigSandFrog : MonoBehaviour
 
         float MoveDistance = Vector3.Distance(frog.transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
+        if (MoveDistance <= 3)
+        {
+            JumpDuration *= 2f;
+        }
+        if (MoveDistance >= 5)
+        {
+            JumpDuration /= 1.7f;
+        }
+        JumpDuration /= 2f;
         float now = 0;
 
+        anim[num].speed = (runClipLength / JumpDuration) * 1.2f;
         anim[num].SetTrigger("BFrogJump");
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(.5f);
         while (now < JumpDuration)
         {
             now += Time.deltaTime;
