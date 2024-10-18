@@ -15,6 +15,7 @@ public struct FrogDataStruct
     public bool isInLine;
     public bool SmallFrog;
     public int CurrentTargetPaper; //目前目標貼紙
+    public bool isStay; //是否等待狀態
 
     public FrogDataStruct(bool b)
     {
@@ -30,6 +31,7 @@ public struct FrogDataStruct
         this.isJumping = false;
         this.SmallFrog = false;
         this.CurrentTargetPaper = -1;
+        this.isStay = false;
     }
 
     public FrogDataStruct(
@@ -52,6 +54,7 @@ public struct FrogDataStruct
         this.isJumping = false;
         this.SmallFrog = small;
         CurrentTargetPaper = -1;
+        this.isStay = false;
     }
 }
 
@@ -72,6 +75,7 @@ public class FrogData : MonoBehaviour
     public ColorPapaerStruct colorStruct;
     PaperFly call; //紙消失腳本
     public bool isStateLocked = false;
+
     //
     Rigidbody rb;
 
@@ -109,6 +113,10 @@ public class FrogData : MonoBehaviour
                 {
                     Invoke("WaitedForCall", 1f);
                 }
+                if (frog.Number == 11 && paperColor == "purple")
+                {
+                    Invoke("WaitedForCall", 1f);
+                }
             }
         }
         else if (isStateLocked)
@@ -131,7 +139,7 @@ public class FrogData : MonoBehaviour
                 }
             }
         }
-        
+
         //Invoke("StopDrift", 0.5f);
     }
 
@@ -139,10 +147,9 @@ public class FrogData : MonoBehaviour
     {
         call.callDisappear(CurrentTarget);
         CurrentTarget.GetComponent<PaperData>().paper.State = "disappear"; //表示貼紙飄起
-        
     }
 
-    void StopDrift()//取消kinematic用
+    void StopDrift() //取消kinematic用
     {
         this.GetComponent<Rigidbody>().velocity = Vector3.zero;
     }

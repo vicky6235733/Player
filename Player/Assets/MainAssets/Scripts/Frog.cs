@@ -20,6 +20,7 @@ public class Frog : MonoBehaviour
     Vector3 TargetPosition; //當前目標
     bool isMovingFrog;
     bool isMovedToEnd;
+    public static bool alreadyJumped;
 
     //
     //CameraShake CameraShake; //鏡頭抖動腳本
@@ -28,6 +29,7 @@ public class Frog : MonoBehaviour
     void Start()
     {
         frogStruct = this.gameObject.GetComponent<FrogData>();
+        alreadyJumped = false;
         //
         if (Point != null)
         {
@@ -55,25 +57,57 @@ public class Frog : MonoBehaviour
         if (!isMovingFrog)
         {
             MoveFrog();
-            anim.SetBool("FrogJump", true);
+            
         }
-        else
-        {
-            anim.SetBool("FrogJump", false);
-        }
+      
+        
     }
 
     void MoveFrog()
     {
         isMovingFrog = true;
         FrogTargetCounting();
-        CheckColorPaper();
-        StartCoroutine(JumpToTarget());
+      
+        switch (frogStruct.Number)
+        {
+            case 10:
+                CheckColorPaper(10);
+                StartCoroutine(JumpToTarget());
+                break;
+
+            case 11:
+                if (alreadyJumped)
+                {
+                    MoveSpeed =10;
+                    JumpHeight = 3f;
+                    CheckColorPaper(11);
+                    StartCoroutine(JumpToTarget());
+                }
+                else
+                {
+                    //Debug.Log("child is not frog 12,waiting...");
+                    isMovingFrog = false;
+                }
+                break;
+
+            case 12:
+                if (!alreadyJumped)
+                {
+                    MoveSpeed =8;
+                    StartCoroutine(JumpToTarget());
+                }
+                break;
+
+            default:
+                Debug.Log("frog number of struct is error");
+                isMovingFrog = false;
+                break;
+        }
     }
 
-    void FrogTargetCounting() //小青蛙偵測是否填色
+    void FrogTargetCounting() //小青蛙偵測是否已經填色
     {
-        if (frogStruct.paperStruct.PatternType != null) //如果有踩過目標，就分配目標顏色然後交給小青蛙偵測
+        if (frogStruct.paperStruct.PatternType != null) //如果有踩過目標，就分配目標顏色然後交給小青蛙偵測有沒有填
         {
             frogStruct.colorStruct = FindObjectsOfType<ColorData>()
                 .Where(ColorData =>
@@ -84,18 +118,40 @@ public class Frog : MonoBehaviour
         }
     }
 
-    void CheckColorPaper() //每次移動前偵測是否改目標
+    void CheckColorPaper(int num) //每次移動前偵測是否改目標，有填就更改
     {
-        if (frogStruct.colorStruct.Color != null)
+        switch (num)
         {
-            if (frogStruct.colorStruct.Activity == true)
-            {
-                if (transform.position == StartPoint)
+            case 10:
+                if (frogStruct.colorStruct.Color != null)
                 {
-                    EndPoint = Point[2].position;
-                    JumpHeight = 5f;
+                    if (frogStruct.colorStruct.Activity == true)
+                    {
+                        if (transform.position == StartPoint)
+                        {
+                            EndPoint = Point[2].position;
+                            JumpHeight = 5f;
+                        }
+                    }
                 }
-            }
+                break;
+            case 11:
+                if (frogStruct.colorStruct.Color != null)
+                {
+                    if (frogStruct.colorStruct.Activity == true)
+                    {
+                        if (transform.position == StartPoint)
+                        {
+                            EndPoint = Point[2].position;
+                            JumpHeight = 5.5f;
+                        }
+                    }
+                }
+                break;
+
+            default:
+                Debug.Log("frog number in function error");
+                break;
         }
     }
 
@@ -112,6 +168,9 @@ public class Frog : MonoBehaviour
         float MoveDistance = Vector3.Distance(transform.position, TargetPosition); //距離長度
         float JumpDuration = MoveDistance / MoveSpeed; //移動時間
         float now = 0;
+
+        anim.SetTrigger("BFrogJump");
+        yield return new WaitForSeconds(.6f);
 
         while (now < JumpDuration)
         {
@@ -140,5 +199,12 @@ public class Frog : MonoBehaviour
         //交換起點終點位置 狀態
         isMovedToEnd = !isMovedToEnd;
         isMovingFrog = false;
+
+        if (frogStruct.Number == 12)
+        {
+            this.gameObject.transform.SetParent(Point[1].parent);
+            isMovingFrog = true;
+            alreadyJumped = true;
+        }
     }
 }

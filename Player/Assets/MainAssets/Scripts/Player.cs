@@ -60,7 +60,7 @@ public class Player : MonoBehaviour
     SkinnedMeshRenderer[] rend; //1 4 8 suger
     public Material[] matBody;
     public Material[] matSuger;
-    string ColorName;
+    public static string ColorName;
     string[] AllColor = { "null", "red", "yellow", "blue", "green", "orange", "purple" };
 
     //
@@ -89,10 +89,10 @@ public class Player : MonoBehaviour
         decelerationFactor = 1f;
         TriggerLayerMask = LayerMask.GetMask("TriggerLayer");
         //
-        MoveSpeed = 3f;
+        MoveSpeed = 3.5f;
         Speed = MoveSpeed * 2;
-        JumpForce = 450;
-        RotateSpeed = 200f;
+        JumpForce = 450f;
+        RotateSpeed = 300f;
         JumpInterval = 1f; //跳躍間隔
         LastJumpTime = Time.time - JumpInterval; // 將上次跳躍時間初始化為在間隔之前的時間
 
@@ -136,7 +136,16 @@ public class Player : MonoBehaviour
         float ver = Input.GetAxis("Vertical");
 
         //idle
-        MoveDirection = new Vector3(hor, 0, ver);
+        Vector3 forward = transform.forward; // 当前朝向
+        Vector3 right = transform.right; // 右侧方向
+        MoveDirection = forward * ver + right * hor; // 根据输入计算移动方向
+
+        // 规范化移动方向，避免移动速度过快
+        if (MoveDirection.magnitude > 1f)
+        {
+            MoveDirection.Normalize();
+        }
+       
         if (MoveDirection == Vector3.zero && isOnFloor)
         {
             AnimaController(1f);
@@ -147,6 +156,9 @@ public class Player : MonoBehaviour
         Vector3 RotateAmount = hor * Vector3.up * RotateSpeed * Time.deltaTime;
         Quaternion deltaRotation = Quaternion.Euler(RotateAmount);
         rb.MoveRotation(rb.rotation * deltaRotation);
+        //Quaternion targetRotation = Quaternion.LookRotation(MoveDirection);
+        //rb.MoveRotation(Quaternion.Slerp(transform.rotation, targetRotation, RotateSpeed * Time.deltaTime));
+
 
         if (hor != 0 && !isGettingRotation)
         {
@@ -174,7 +186,11 @@ public class Player : MonoBehaviour
         ); //射線偵測下方有沒有地板
 
         GameObject item = isOnFloor && hitFloor.collider ? hitFloor.collider.gameObject : null;
-        if (item != null && item.transform.childCount > 0)
+        if (item != null && item.layer == LayerMask.NameToLayer("Ground"))
+        {
+            isOnFloor = true;
+        }
+        else if (item != null && item.transform.childCount > 0)
         {
             foreach (Transform child in item.transform)
             {
@@ -237,9 +253,8 @@ public class Player : MonoBehaviour
             if (MoveDirection != Vector3.zero && !isSprinting)
             {
                 Vector3 MoveLength = new Vector3(0, 0, ver);
-                rb.MovePosition(
-                    rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime)
-                );
+                rb.MovePosition(rb.position + MoveDirection * MoveSpeed * Time.deltaTime);
+                //rb.MovePosition(rb.position + (transform.forward * ver * MoveSpeed * Time.deltaTime));
                 AnimaController(2f);
                 //Smoke.SetBool("Smoke", true);
             }
@@ -471,9 +486,7 @@ public class Player : MonoBehaviour
             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
             if (ColorCnt == 1)
             {
-                ChangeMaterial(
-                    Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color)
-                );
+                ChangeMaterial(Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color));
                 ColorName = other.gameObject.GetComponent<FrogData>().frog.Color;
             }
             else if (ColorCnt == 2)
@@ -530,7 +543,7 @@ public class Player : MonoBehaviour
             ColliderEntered = true;
             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
             ChangeMaterial(0);
-            ColorName = "original";
+            ColorName = "null";
             ColorCnt = 0;
         }
     }
@@ -606,7 +619,7 @@ public class Player : MonoBehaviour
                 .Where(PaperData => PaperData.paper.ID == CheckID)
                 .Select(PaperData => PaperData.paper)
                 .FirstOrDefault();
-                
+
             if (
                 PaperData.State != "stay"
                 && targetGroup[0].GetComponent<ColorData>().colorPaper.Activity == false
@@ -614,7 +627,6 @@ public class Player : MonoBehaviour
             {
                 if (ColorName == targetGroup[0].GetComponent<ColorData>().colorPaper.Color)
                 {
-                    
                     targetGroup[0].GetComponent<ColorData>().colorPaper.Activity = true;
                     return true;
                 }
@@ -622,7 +634,9 @@ public class Player : MonoBehaviour
                 {
                     return false;
                 }
-            }else{
+            }
+            else
+            {
                 Debug.Log("Paper state wrong,or Color paper activity wrong");
                 return false;
             }

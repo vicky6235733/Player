@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6044d44829c8cfc41832c7d6a29649a5
+guid: 6f9f79b4f05147246b38e8ce5a9373b1
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
@@ -9,23 +9,8 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: lambert1
     second: {fileID: 2100000, guid: 8163107e0a6b736469e5081f13127870, type: 2}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: bigfrog-UVok-2_lambert1_AlbedoTransparency
-    second: {fileID: 2800000, guid: 8f89a43dba3e9854aafe4395113b640b, type: 3}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: bigfrog-UVok-2_lambert1_MetallicSmoothness
-    second: {fileID: 2800000, guid: 95891f875944c1148aa8ca115535ba41, type: 3}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: bigfrog-UVok-2_lambert1_Normal
-    second: {fileID: 2800000, guid: 11d688a13b0c6924bb425525418fb781, type: 3}
   materials:
-    materialImportMode: 2
+    materialImportMode: 1
     materialName: 0
     materialSearch: 1
     materialLocation: 1
@@ -64,7 +49,7 @@ ModelImporter:
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 1
+      loopTime: 0
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0
