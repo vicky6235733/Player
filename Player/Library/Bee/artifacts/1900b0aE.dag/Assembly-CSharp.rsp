@@ -403,6 +403,8 @@
 "Assets/MainAssets/Systems/ValueHandler.cs"
 "Assets/Samples/Addressables/1.21.21/Addressables Utility/AddressablesUtility.cs"
 "Assets/Scripts/SimpleCameraController.cs"
+"Assets/SuAssets/Parkour/Script/FallCollider.cs"
+"Assets/SuAssets/Parkour/Script/Rotation.cs"
 "Assets/TutorialInfo/Scripts/Readme.cs"
 -langversion:9.0
 /deterministic
