@@ -90,16 +90,16 @@ MonoBehaviour:
   active: 1
   color:
     m_OverrideState: 1
-    m_Value: {r: 0.2679245, g: 0.15157789, b: 0.011626882, a: 1}
+    m_Value: {r: 0.4339623, g: 0.43191528, b: 0.3786935, a: 1}
   center:
     m_OverrideState: 0
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
-    m_Value: 0.42
+    m_Value: 1
   smoothness:
     m_OverrideState: 1
-    m_Value: 0.54
+    m_Value: 0.409
   rounded:
     m_OverrideState: 1
     m_Value: 0
@@ -121,10 +121,10 @@ MonoBehaviour:
     m_Value: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0.7
+    m_Value: 0.863
   response:
     m_OverrideState: 1
-    m_Value: 0.47
+    m_Value: 0.753
   texture:
     m_OverrideState: 0
     m_Value: {fileID: 0}

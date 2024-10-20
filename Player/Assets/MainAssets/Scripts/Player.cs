@@ -91,8 +91,8 @@ public class Player : MonoBehaviour
         //
         MoveSpeed = 3.5f;
         Speed = MoveSpeed * 2;
-        JumpForce = 450f;
-        RotateSpeed = 300f;
+        JumpForce = 550f;
+        RotateSpeed = 450f;
         JumpInterval = 1f; //跳躍間隔
         LastJumpTime = Time.time - JumpInterval; // 將上次跳躍時間初始化為在間隔之前的時間
 
@@ -486,7 +486,7 @@ public class Player : MonoBehaviour
             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
             if (ColorCnt == 1)
             {
-                //ChangeMaterial(Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color));
+                ChangeMaterial(Array.IndexOf(AllColor, other.gameObject.GetComponent<FrogData>().frog.Color));
                 ColorName = other.gameObject.GetComponent<FrogData>().frog.Color;
             }
             else if (ColorCnt == 2)
@@ -530,7 +530,7 @@ public class Player : MonoBehaviour
                             ColorName = "green";
                         }
                     }
-                    //ChangeMaterial(Array.IndexOf(AllColor, ColorName));
+                    ChangeMaterial(Array.IndexOf(AllColor, ColorName));
                 }
             }
             else
@@ -542,7 +542,7 @@ public class Player : MonoBehaviour
         {
             ColliderEntered = true;
             KnockBack(other); //用other偵測前方物體位置，方便計算反彈角度
-            //ChangeMaterial(0);
+            ChangeMaterial(0);
             ColorName = "null";
             ColorCnt = 0;
         }
